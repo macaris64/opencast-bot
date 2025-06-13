@@ -70,7 +70,7 @@ def main():
     
     # Validate configuration first
     print("🔍 Debug: Validating bot configuration...")
-    if not run_command(["python", "-m", "bot.cli", "validate_config"]):
+    if not run_command(["python", "-m", "bot.cli", "validate-config"]):
         print("❌ Configuration validation failed!")
         sys.exit(1)
     

@@ -76,7 +76,7 @@ jobs:
           echo "TWITTER_API_KEY length: ${#TWITTER_API_KEY}"
           echo "TELEGRAM_BOT_TOKEN length: ${#TELEGRAM_BOT_TOKEN}"
           echo "🔍 Debug: Validating configuration..."
-          python -m bot.cli validate_config || echo "⚠️ Config validation failed"
+          python -m bot.cli validate-config || echo "⚠️ Config validation failed"
           echo "🔍 Debug: Running bot..."
           python scripts/run_bot.py
 
