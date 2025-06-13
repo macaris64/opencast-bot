@@ -9,6 +9,7 @@ import subprocess
 import sys
 import os
 import time
+import signal
 from pathlib import Path
 
 # Seed random with current time for better randomization
@@ -18,37 +19,63 @@ random.seed(int(time.time()))
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Timeout handler
+def timeout_handler(signum, frame):
+    print("⏰ Script timeout reached! Exiting...")
+    sys.exit(1)
+
+# Set timeout for the entire script (10 minutes)
+signal.signal(signal.SIGALRM, timeout_handler)
+signal.alarm(600)  # 10 minutes timeout
+
 def get_available_categories_and_topics():
     """Get available categories and topics from the bot's database."""
     try:
+        print("🔍 Debug: Importing JSONCategoryManager...")
         from bot.db.json_orm import JSONCategoryManager
         
+        print("🔍 Debug: Creating category manager...")
         category_manager = JSONCategoryManager()
+        
+        print("🔍 Debug: Listing categories...")
         categories = category_manager.list_categories()
+        print(f"🔍 Debug: Found {len(categories)} categories: {categories}")
         
         categories_and_topics = {}
         
         for category_id in categories:
+            print(f"🔍 Debug: Loading category {category_id}...")
             category = category_manager.load_category(category_id)
             if category and category.topics and len(category.topics) > 0:
                 topics = [topic.topic for topic in category.topics]
                 categories_and_topics[category_id] = topics
+                print(f"🔍 Debug: Category {category_id} has {len(topics)} topics")
+            else:
+                print(f"🔍 Debug: Category {category_id} has no topics or failed to load")
         
+        print(f"🔍 Debug: Final categories_and_topics: {list(categories_and_topics.keys())}")
         return categories_and_topics
         
     except Exception as e:
-        print(f"Error loading categories: {e}")
+        print(f"❌ Error loading categories: {e}")
+        print(f"🔍 Debug: Exception type: {type(e).__name__}")
+        import traceback
+        print(f"🔍 Debug: Traceback: {traceback.format_exc()}")
         # Fallback to a default category
         return {"dev-best-practices": ["Code quality", "Best practices", "Clean code"]}
 
-def run_command(command: list[str]) -> bool:
+def run_command(command: list[str], timeout: int = 300) -> bool:
     """Run a command and return success status."""
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        print(f"🔍 Debug: Running command: {' '.join(command)} (timeout: {timeout}s)")
+        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=timeout)
         print(f"✅ Command succeeded: {' '.join(command)}")
         if result.stdout:
             print(f"Output: {result.stdout}")
         return True
+    except subprocess.TimeoutExpired:
+        print(f"⏰ Command timed out after {timeout}s: {' '.join(command)}")
+        return False
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed: {' '.join(command)}")
         print(f"Error: {e.stderr}")
@@ -85,7 +112,9 @@ def main():
         sys.exit(1)
     
     # Get available categories and topics
+    print("🔍 Debug: Getting available categories and topics...")
     categories_and_topics = get_available_categories_and_topics()
+    print("🔍 Debug: Categories and topics retrieved successfully")
     
     if not categories_and_topics:
         print("❌ No categories available!")
@@ -94,14 +123,18 @@ def main():
     print(f"📚 Found {len(categories_and_topics)} categories")
     
     # Randomly select 1 category to run (to avoid overwhelming)
+    print("🔍 Debug: Selecting random category...")
     selected_categories = random.sample(list(categories_and_topics.keys()), k=1)
+    print(f"🔍 Debug: Selected categories: {selected_categories}")
     
     success_count = 0
     total_attempts = 0
     successful_operations = []
     
     for category in selected_categories:
+        print(f"🔍 Debug: Processing category: {category}")
         available_topics = categories_and_topics[category]
+        print(f"🔍 Debug: Available topics for {category}: {len(available_topics)} topics")
         
         # Try up to 5 different topics to find one that works
         max_topic_attempts = min(5, len(available_topics))
@@ -109,12 +142,14 @@ def main():
         category_success = False
         
         while topic_attempts < max_topic_attempts and not category_success:
+            print(f"🔍 Debug: Topic attempt {topic_attempts + 1}/{max_topic_attempts}")
             topic = random.choice(available_topics)
             
             print(f"\n📝 Processing category: {category}")
             print(f"📋 Topic: {topic} (attempt {topic_attempts + 1}/{max_topic_attempts})")
             
             # Generate and post content using CLI (post command does both)
+            print(f"🔍 Debug: Running post command for {category}/{topic}")
             total_attempts += 1
             if run_command(["python", "-m", "bot.cli", "post", category, topic]):
                 success_count += 1
@@ -136,10 +171,13 @@ def main():
         print(f"\n📝 COMMIT_INFO: {commit_info}")
         
         # Write to environment file for GitHub Actions
+        print("🔍 Debug: Writing commit info to file...")
         with open("commit_info.txt", "w") as f:
             f.write(commit_info)
+        print("🔍 Debug: Commit info written successfully")
     
     # Exit with appropriate code
+    print("🔍 Debug: Preparing to exit...")
     if success_count > 0:
         print("🎉 Bot run completed successfully!")
         sys.exit(0)

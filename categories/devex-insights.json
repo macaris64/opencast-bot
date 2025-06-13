@@ -5,7 +5,7 @@
   "prompt_template": "Generate a valuable insight about {topic} for improving developer experience. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T17:28:12.003790",
+  "updated_at": "2025-06-13T23:18:24.043178",
   "topics": [
     {
       "topic": "Developer productivity metrics",
@@ -66,7 +66,20 @@
     },
     {
       "topic": "Knowledge sharing platforms",
-      "entries": []
+      "entries": [
+        {
+          "content": "Utilize knowledge sharing platforms to provide developers with easy access to up-to-date information and collaborative problem-solving. #DevExperience #KnowledgeSharing",
+          "metadata": {
+            "length": 168,
+            "source": "openai",
+            "tags": [
+              "#DevExperience",
+              "#KnowledgeSharing"
+            ]
+          },
+          "created_at": "2025-06-13T23:18:24.043107"
+        }
+      ]
     },
     {
       "topic": "Developer happiness metrics",
