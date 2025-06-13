@@ -3,6 +3,8 @@
 Simplified auto-run script for OpenCast Bot in GitHub Actions.
 """
 
+print("🔍 DEBUG: Script started - importing modules...")
+
 import random
 import subprocess
 import sys
@@ -11,23 +13,29 @@ import time
 import signal
 from pathlib import Path
 
+print("🔍 DEBUG: Modules imported successfully")
+
 # Seed random with current time for better randomization
 random.seed(int(time.time()))
+print("🔍 DEBUG: Random seed set")
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+print(f"🔍 DEBUG: Project root added to path: {project_root}")
 
 # Timeout handler
 def timeout_handler(signum, frame):
     print("⏰ Script timeout reached! Exiting...")
     sys.exit(1)
 
+print("🔍 DEBUG: Setting up signal handler...")
 # Set timeout for the entire script (3 minutes)
 signal.signal(signal.SIGALRM, timeout_handler)
 signal.alarm(180)  # 3 minutes timeout
+print("🔍 DEBUG: Signal handler set with 180s timeout")
 
-def run_command_simple(command: list[str], timeout: int = 120) -> tuple[bool, str]:
+def run_command_simple(command: list[str], timeout: int = 60) -> tuple[bool, str]:
     """Run a command and return success status and output."""
     try:
         print(f"🔍 Running: {' '.join(command)}")

@@ -5,7 +5,7 @@
   "prompt_template": "Generate an insightful tip about {topic} for cloud-native development. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T23:36:54.043289",
+  "updated_at": "2025-06-13T23:52:02.364908",
   "topics": [
     {
       "topic": "Microservices architecture patterns",
@@ -33,6 +33,18 @@
             ]
           },
           "created_at": "2025-06-13T23:36:54.043222"
+        },
+        {
+          "content": "Pro tip: Use the API Gateway pattern for centralized access control and monitoring of your microservices. #CloudNative #Microservices",
+          "metadata": {
+            "length": 133,
+            "source": "openai",
+            "tags": [
+              "#CloudNative",
+              "#Microservices"
+            ]
+          },
+          "created_at": "2025-06-13T23:52:02.364834"
         }
       ]
     },
