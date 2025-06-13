@@ -5,7 +5,7 @@
   "prompt_template": "Generate an insightful tip about {topic} for cloud-native development. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T23:36:54.043289",
+  "updated_at": "2025-06-13T20:46:30.014053",
   "topics": [
     {
       "topic": "Microservices architecture patterns",
@@ -33,6 +33,18 @@
             ]
           },
           "created_at": "2025-06-13T23:36:54.043222"
+        },
+        {
+          "content": "New to this? When designing microservices for cloud-native apps, use patterns like API Gateway and Circuit Breaker for resilience and scalability. #Microservices #CloudNative",
+          "metadata": {
+            "length": 174,
+            "source": "openai",
+            "tags": [
+              "#Microservices",
+              "#CloudNative"
+            ]
+          },
+          "created_at": "2025-06-13T20:46:30.014003"
         }
       ]
     },
