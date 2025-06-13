@@ -226,4 +226,42 @@ class TestConfig:
             
             assert config.content_min_length == 150
             assert config.content_max_length == 250
-            assert config.required_hashtag_count == 3 
+            assert config.required_hashtag_count == 3
+    
+    def test_get_config_function(self):
+        """Test get_config function."""
+        from bot.config import get_config, reset_config
+        
+        # Reset first
+        reset_config()
+        
+        # Get config
+        config1 = get_config()
+        config2 = get_config()
+        
+        # Should return same instance
+        assert config1 is config2
+        assert isinstance(config1, Config)
+    
+    def test_reset_config_function(self):
+        """Test reset_config function."""
+        from bot.config import get_config, reset_config
+        
+        # Get initial config
+        config1 = get_config()
+        
+        # Reset and get new config
+        reset_config()
+        config2 = get_config()
+        
+        # Should be different instances
+        assert config1 is not config2
+        assert isinstance(config2, Config)
+    
+    def test_config_backward_compatibility(self):
+        """Test backward compatibility config function."""
+        from bot.config import config
+        
+        # Should return Config instance
+        result = config()
+        assert isinstance(result, Config) 

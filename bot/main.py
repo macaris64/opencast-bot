@@ -159,7 +159,7 @@ class OpenCastBot:
 
 async def main() -> None:
     """Main entry point for the application."""
-    bot = OpenCastBot(config)
+    bot = OpenCastBot(get_config())
     
     # Example usage - this would be replaced by CLI integration
     success = await bot.run(

@@ -289,9 +289,9 @@ class TestMainFunction:
     """Test cases for main function."""
     
     @patch('bot.main.OpenCastBot')
-    @patch('bot.main.config')
+    @patch('bot.main.get_config')
     @pytest.mark.asyncio
-    async def test_main_function(self, mock_config, mock_bot_class):
+    async def test_main_function(self, mock_get_config, mock_bot_class):
         """Test main function execution."""
         # Setup mocks
         mock_bot_instance = Mock()
@@ -302,5 +302,5 @@ class TestMainFunction:
         await main()
         
         # Verify
-        mock_bot_class.assert_called_once_with(mock_config)
+        mock_bot_class.assert_called_once_with(mock_get_config.return_value)
         mock_bot_instance.run.assert_called_once() 
