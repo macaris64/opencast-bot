@@ -23,9 +23,9 @@ def timeout_handler(signum, frame):
     print("⏰ Script timeout reached! Exiting...")
     sys.exit(1)
 
-# Set timeout for the entire script (5 minutes)
+# Set timeout for the entire script (3 minutes)
 signal.signal(signal.SIGALRM, timeout_handler)
-signal.alarm(300)  # 5 minutes timeout
+signal.alarm(180)  # 3 minutes timeout
 
 def run_command_simple(command: list[str], timeout: int = 120) -> tuple[bool, str]:
     """Run a command and return success status and output."""

@@ -88,7 +88,7 @@ jobs:
           echo "🔍 Debug: Validating configuration..."
           python -m bot.cli validate-config || echo "⚠️ Config validation failed"
           echo "🔍 Debug: Running bot (simple version)..."
-          timeout 300 python scripts/run_bot_simple.py || echo "⚠️ Bot execution failed or timed out"
+          timeout 180 python scripts/run_bot_simple.py || echo "⚠️ Bot execution failed or timed out"
 
       - name: Auto-commit changes
         run: |

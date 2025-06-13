@@ -61,11 +61,6 @@ class ContentGenerator(LoggerMixin):
         Returns:
             CategoryEntry if generation successful, None otherwise
         """
-        # Check if content already exists for this topic
-        if category.has_content_for_topic(topic):
-            self.logger.info(f"Content already exists for topic '{topic}' in category '{category.category_id}'")
-            return None
-        
         max_retries = self.config.max_retries
         retry_count = 0
         

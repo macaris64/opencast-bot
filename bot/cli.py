@@ -308,6 +308,8 @@ def post(
             if "twitter" in platforms:
                 try:
                     from bot.publisher.twitter import TwitterPublisher, TwitterConfig
+                    from bot.utils import RateLimitError
+                    
                     twitter_config = TwitterConfig(
                         api_key=config.twitter_api_key,
                         api_secret=config.twitter_api_secret,
@@ -332,6 +334,14 @@ def post(
                             console.print("✅ Posted to Twitter")
                         else:
                             console.print("❌ Failed to post to Twitter")
+                except RateLimitError as e:
+                    cli_handler.logger.warning("Twitter rate limit exceeded - skipping", extra={
+                        "error": str(e),
+                        "category_id": category_id,
+                        "topic": topic,
+                        "retry_after": getattr(e, 'retry_after', None)
+                    })
+                    console.print("⏰ Twitter rate limit exceeded - skipping post")
                 except Exception as e:
                     cli_handler.logger.error("Twitter posting failed", extra={
                         "error": str(e),
@@ -343,6 +353,7 @@ def post(
             if "telegram" in platforms:
                 try:
                     from bot.publisher.telegram import TelegramPublisher, TelegramConfig
+                    
                     telegram_config = TelegramConfig(
                         bot_token=config.telegram_bot_token,
                         chat_id=config.telegram_chat_id,
@@ -365,6 +376,13 @@ def post(
                             console.print("✅ Posted to Telegram")
                         else:
                             console.print("❌ Failed to post to Telegram")
+                except RateLimitError as e:
+                    cli_handler.logger.warning("Telegram rate limit exceeded - skipping", extra={
+                        "error": str(e),
+                        "category_id": category_id,
+                        "topic": topic
+                    })
+                    console.print("⏰ Telegram rate limit exceeded - skipping post")
                 except Exception as e:
                     cli_handler.logger.error("Telegram posting failed", extra={
                         "error": str(e),

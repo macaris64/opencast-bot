@@ -24,9 +24,9 @@ def timeout_handler(signum, frame):
     print("⏰ Script timeout reached! Exiting...")
     sys.exit(1)
 
-# Set timeout for the entire script (10 minutes)
+# Set timeout for the entire script (3 minutes)
 signal.signal(signal.SIGALRM, timeout_handler)
-signal.alarm(600)  # 10 minutes timeout
+signal.alarm(180)  # 3 minutes timeout
 
 def get_available_categories_and_topics():
     """Get available categories and topics from the bot's database."""

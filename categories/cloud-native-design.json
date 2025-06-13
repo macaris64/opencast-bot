@@ -5,7 +5,7 @@
   "prompt_template": "Generate an insightful tip about {topic} for cloud-native development. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T23:26:21.044374",
+  "updated_at": "2025-06-13T23:36:54.043289",
   "topics": [
     {
       "topic": "Microservices architecture patterns",
@@ -21,6 +21,18 @@
             ]
           },
           "created_at": "2025-06-13T23:26:21.044305"
+        },
+        {
+          "content": "Implementing Event Sourcing with CQRS in your microservices architecture can enhance scalability and maintainability. #Microservices #CloudNative",
+          "metadata": {
+            "length": 145,
+            "source": "openai",
+            "tags": [
+              "#Microservices",
+              "#CloudNative"
+            ]
+          },
+          "created_at": "2025-06-13T23:36:54.043222"
         }
       ]
     },
