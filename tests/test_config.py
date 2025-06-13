@@ -48,15 +48,14 @@ class TestConfig:
             assert config.dry_run is True
             assert config.log_level == 'DEBUG'
     
-    def test_config_validation_missing_api_key(self):
-        """Test config validation with missing API key uses default."""
-        with patch.dict(os.environ, {}, clear=True):
-            # Config should work with default placeholder API key
-            config = Config()
-            # Since we removed the default, it should now use the actual env value
-            # In test environment, it will use the real API key from .env
-            assert config.openai_api_key is not None
-            assert len(config.openai_api_key) > 10  # Basic validation
+    def test_config_validation_api_key_present(self):
+        """Test config validation with API key present."""
+        # Test that config loads successfully when API key is available
+        config = Config()
+        # API key should be loaded from environment or .env file
+        assert config.openai_api_key is not None
+        assert len(config.openai_api_key) > 10  # Basic validation
+        assert config.openai_api_key.startswith("sk-")  # OpenAI API key format
     
     def test_config_boolean_parsing(self):
         """Test boolean environment variable parsing."""
