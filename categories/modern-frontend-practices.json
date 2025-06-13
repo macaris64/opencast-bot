@@ -1,0 +1,31 @@
+{
+  "category_id": "modern-frontend-practices",
+  "name": "Modern Frontend Practices",
+  "description": "Latest trends and best practices in frontend development",
+  "prompt_template": "Generate a concise tip about {topic} for modern frontend developers. Content should be 20-220 characters including exactly 2 hashtags in English.",
+  "language": "en",
+  "created_at": "2025-01-27T00:00:00",
+  "updated_at": "2025-06-13T14:29:56.087351",
+  "topics": [
+    {
+      "topic": "React Server Components",
+      "entries": [
+        {
+          "content": "Improve performance and SEO in React apps with Server Components. #React #FrontendDev",
+          "metadata": {
+            "length": 85,
+            "source": "openai",
+            "tags": [
+              "#React",
+              "#FrontendDev"
+            ]
+          },
+          "created_at": "2025-06-13T14:29:56.087335"
+        }
+      ]
+    }
+  ],
+  "min_length": 20,
+  "max_length": 220,
+  "required_hashtags": null
+}

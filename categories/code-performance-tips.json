@@ -1,0 +1,13 @@
+{
+  "category_id": "code-performance-tips",
+  "name": "Code Performance Micro-Tips",
+  "description": "Quick performance optimization tips for developers",
+  "prompt_template": "Generate a concise performance tip about {topic} for developers. Content should be 20-220 characters including exactly 2 hashtags in English.",
+  "language": "en",
+  "min_length": 20,
+  "max_length": 220,
+  "hashtag_count": 2,
+  "created_at": "2025-01-27",
+  "updated_at": "2025-01-27",
+  "topics": []
+} 

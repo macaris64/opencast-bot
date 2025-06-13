@@ -1,0 +1,13 @@
+{
+  "category_id": "clean-git-practices",
+  "name": "Clean Git Practices in Teams",
+  "description": "Git best practices for effective team collaboration",
+  "prompt_template": "Generate a useful Git tip about {topic} for team collaboration. Content should be 20-220 characters including exactly 2 hashtags in English.",
+  "language": "en",
+  "min_length": 20,
+  "max_length": 220,
+  "hashtag_count": 2,
+  "created_at": "2025-01-27",
+  "updated_at": "2025-01-27",
+  "topics": []
+} 

@@ -1,0 +1,13 @@
+{
+  "category_id": "testing-modern-stacks",
+  "name": "Testing in Modern Stacks",
+  "description": "Testing strategies and best practices for modern tech stacks",
+  "prompt_template": "Generate a practical testing tip about {topic} for modern development stacks. Content should be 20-220 characters including exactly 2 hashtags in English.",
+  "language": "en",
+  "min_length": 20,
+  "max_length": 220,
+  "hashtag_count": 2,
+  "created_at": "2025-01-27",
+  "updated_at": "2025-01-27",
+  "topics": []
+} 

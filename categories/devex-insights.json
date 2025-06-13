@@ -1,0 +1,13 @@
+{
+  "category_id": "devex-insights",
+  "name": "Developer Experience (DevEx) Insights",
+  "description": "Tips for improving developer experience and productivity",
+  "prompt_template": "Generate a valuable insight about {topic} for improving developer experience. Content should be 20-220 characters including exactly 2 hashtags in English.",
+  "language": "en",
+  "min_length": 20,
+  "max_length": 220,
+  "hashtag_count": 2,
+  "created_at": "2025-01-27",
+  "updated_at": "2025-01-27",
+  "topics": []
+} 
