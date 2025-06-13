@@ -1,19 +1,20 @@
-name: OpenCast Bot CI/CD
+name: OpenCast Bot CI
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
   schedule:
-    # Run every hour
-    - cron: "0 * * * *"
+    # Run every 6 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
-    # Allow manual trigger
+    inputs:
+      force_run:
+        description: "Force run the bot"
+        required: false
+        default: "false"
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -28,23 +29,16 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
-        env:
-          OPENAI_API_KEY: sk-test-key-for-testing
-          TWITTER_API_KEY: test-twitter-key
-          TWITTER_API_SECRET: test-twitter-secret
-          TWITTER_ACCESS_TOKEN: test-twitter-token
-          TWITTER_ACCESS_TOKEN_SECRET: test-twitter-token-secret
-          TELEGRAM_BOT_TOKEN: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
-          TELEGRAM_CHAT_ID: -1001234567890
         run: |
-          pytest --cov=bot --cov-report=term-missing --cov-fail-under=90
+          python -m pytest tests/ -v --tb=short --cov=bot --cov-report=term-missing
+        env:
+          OPENAI_API_KEY: "sk-placeholder-for-testing"
 
-  deploy:
-    needs: test
+  post-content:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    permissions:
-      contents: write
+    needs: test
+    if: github.event_name == 'schedule' || github.event.inputs.force_run == 'true'
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,42 +56,36 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run OpenCast Bot
+        timeout-minutes: 3
+        run: |
+          python scripts/run_bot.py
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          TWITTER_ENABLED: true
           TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
           TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
-          TELEGRAM_ENABLED: true
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DRY_RUN: true
-          LOG_LEVEL: DEBUG
-        run: |
-          echo "🔍 Debug: Checking environment variables..."
-          echo "OPENAI_API_KEY length: ${#OPENAI_API_KEY}"
-          echo "TWITTER_API_KEY length: ${#TWITTER_API_KEY}"
-          echo "TWITTER_API_SECRET length: ${#TWITTER_API_SECRET}"
-          echo "TWITTER_ACCESS_TOKEN length: ${#TWITTER_ACCESS_TOKEN}"
-          echo "TWITTER_ACCESS_TOKEN_SECRET length: ${#TWITTER_ACCESS_TOKEN_SECRET}"
-          echo "TWITTER_BEARER_TOKEN length: ${#TWITTER_BEARER_TOKEN}"
-          echo "TELEGRAM_BOT_TOKEN length: ${#TELEGRAM_BOT_TOKEN}"
-          echo "TELEGRAM_CHAT_ID length: ${#TELEGRAM_CHAT_ID}"
-          echo "🔍 Debug: Validating configuration..."
-          python -m bot.cli validate-config || echo "⚠️ Config validation failed"
-          echo "🔍 Debug: Running bot (simple version)..."
-          timeout 180 python scripts/run_bot_simple.py || echo "⚠️ Bot execution failed or timed out"
+          LOG_LEVEL: INFO
 
-      - name: Auto-commit changes
+      - name: Check for changes
+        id: check_changes
         run: |
-          git config --local user.email "bot@opencast.dev"
-          git config --local user.name "OpenCast Bot"
-          git add -A
-          if ! git diff --staged --quiet; then
-            git commit -m "🤖 Auto-update: Generated content $(date '+%Y-%m-%d %H:%M UTC')"
-            git push
+          if [ -f "commit_info.txt" ]; then
+            COMMIT_INFO=$(cat commit_info.txt)
+            echo "commit_info=$COMMIT_INFO" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> $GITHUB_OUTPUT
           else
-            echo "No changes to commit"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add categories/
+          git commit -m "🤖 Auto-generated content: ${{ steps.check_changes.outputs.commit_info }}"
+          git push

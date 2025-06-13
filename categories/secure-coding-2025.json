@@ -5,7 +5,7 @@
   "prompt_template": "Generate a security-focused tip about {topic} for developers in 2025. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T20:13:31.119533",
+  "updated_at": "2025-06-14T00:15:31.651719",
   "topics": [
     {
       "topic": "Zero-trust security architecture",
@@ -17,7 +17,20 @@
     },
     {
       "topic": "OWASP Top 10 vulnerabilities",
-      "entries": []
+      "entries": [
+        {
+          "content": "In 2025, prioritize input validation over output encoding to prevent injection attacks. #OWASPTop10 #SecurityFocus",
+          "metadata": {
+            "length": 114,
+            "source": "openai",
+            "tags": [
+              "#OWASPTop10",
+              "#SecurityFocus"
+            ]
+          },
+          "created_at": "2025-06-14T00:15:31.651642"
+        }
+      ]
     },
     {
       "topic": "Secure by design principles",
@@ -41,7 +54,32 @@
     },
     {
       "topic": "API security hardening",
-      "entries": []
+      "entries": [
+        {
+          "content": "Implementing OAuth 2.0 with JWT for API authentication and authorization is crucial for securing APIs against modern threats. #OAuth2 #APISecurity",
+          "metadata": {
+            "length": 146,
+            "source": "openai",
+            "tags": [
+              "#OAuth2",
+              "#APISecurity"
+            ]
+          },
+          "created_at": "2025-06-14T00:13:31.679237"
+        },
+        {
+          "content": "In 2025, remember to encrypt sensitive data in transit and at rest to secure APIs against cyber threats. #APIsecurity #EncryptionTech",
+          "metadata": {
+            "length": 133,
+            "source": "openai",
+            "tags": [
+              "#APIsecurity",
+              "#EncryptionTech"
+            ]
+          },
+          "created_at": "2025-06-14T00:14:32.629689"
+        }
+      ]
     },
     {
       "topic": "Container security scanning",

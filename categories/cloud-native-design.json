@@ -5,7 +5,7 @@
   "prompt_template": "Generate an insightful tip about {topic} for cloud-native development. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T20:57:56.700011",
+  "updated_at": "2025-06-14T00:11:45.585775",
   "topics": [
     {
       "topic": "Microservices architecture patterns",
@@ -62,7 +62,20 @@
     },
     {
       "topic": "Container orchestration strategies",
-      "entries": []
+      "entries": [
+        {
+          "content": "Use Kubernetes for efficient container orchestration in cloud-native development. Ensure scalability and reliability. #Kubernetes #CloudNative",
+          "metadata": {
+            "length": 142,
+            "source": "openai",
+            "tags": [
+              "#Kubernetes",
+              "#CloudNative"
+            ]
+          },
+          "created_at": "2025-06-14T00:11:45.585722"
+        }
+      ]
     },
     {
       "topic": "Kubernetes deployment best practices",

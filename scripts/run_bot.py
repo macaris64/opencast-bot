@@ -64,7 +64,7 @@ def get_available_categories_and_topics():
         # Fallback to a default category
         return {"dev-best-practices": ["Code quality", "Best practices", "Clean code"]}
 
-def run_command(command: list[str], timeout: int = 300) -> bool:
+def run_command(command: list[str], timeout: int = 60) -> bool:
     """Run a command and return success status."""
     try:
         print(f"🔍 Debug: Running command: {' '.join(command)} (timeout: {timeout}s)")
@@ -83,7 +83,11 @@ def run_command(command: list[str], timeout: int = 300) -> bool:
 
 def main():
     """Main execution function."""
-    print("🤖 Starting OpenCast Bot auto-run...")
+    print("🤖 Starting OpenCast Bot auto-run for REAL POSTING...")
+    
+    # Force disable DRY_RUN for real posting
+    os.environ['DRY_RUN'] = 'false'
+    print("🔍 Debug: DRY_RUN explicitly set to false for real posting")
     
     # Check environment variables
     print("🔍 Debug: Checking environment...")
@@ -105,6 +109,21 @@ def main():
     print(f"TELEGRAM_BOT_TOKEN: {'✅ Set' if telegram_token else '❌ Missing'} (length: {len(telegram_token)})")
     print(f"TELEGRAM_CHAT_ID: {'✅ Set' if telegram_chat else '❌ Missing'} (length: {len(telegram_chat)})")
     
+    # Enable platforms if API keys are available
+    if twitter_key and twitter_secret and twitter_token and twitter_token_secret:
+        os.environ['TWITTER_ENABLED'] = 'true'
+        print("🔍 Debug: Twitter enabled - API keys found")
+    else:
+        os.environ['TWITTER_ENABLED'] = 'false'
+        print("🔍 Debug: Twitter disabled - missing API keys")
+    
+    if telegram_token and telegram_chat:
+        os.environ['TELEGRAM_ENABLED'] = 'true'
+        print("🔍 Debug: Telegram enabled - API keys found")
+    else:
+        os.environ['TELEGRAM_ENABLED'] = 'false'
+        print("🔍 Debug: Telegram disabled - missing API keys")
+    
     # Validate configuration first
     print("🔍 Debug: Validating bot configuration...")
     if not run_command(["python", "-m", "bot.cli", "validate-config"]):
@@ -122,9 +141,10 @@ def main():
     
     print(f"📚 Found {len(categories_and_topics)} categories")
     
-    # Randomly select 1 category to run (to avoid overwhelming)
-    print("🔍 Debug: Selecting random category...")
-    selected_categories = random.sample(list(categories_and_topics.keys()), k=1)
+    # Randomly select 1-2 categories to run (to avoid overwhelming)
+    num_categories_to_select = min(2, len(categories_and_topics))
+    print("🔍 Debug: Selecting random categories...")
+    selected_categories = random.sample(list(categories_and_topics.keys()), k=num_categories_to_select)
     print(f"🔍 Debug: Selected categories: {selected_categories}")
     
     success_count = 0
@@ -136,8 +156,8 @@ def main():
         available_topics = categories_and_topics[category]
         print(f"🔍 Debug: Available topics for {category}: {len(available_topics)} topics")
         
-        # Try up to 5 different topics to find one that works
-        max_topic_attempts = min(5, len(available_topics))
+        # Try up to 3 different topics to find one that works
+        max_topic_attempts = min(3, len(available_topics))
         topic_attempts = 0
         category_success = False
         
@@ -151,7 +171,7 @@ def main():
             # Generate and post content using CLI (post command does both)
             print(f"🔍 Debug: Running post command for {category}/{topic}")
             total_attempts += 1
-            if run_command(["python", "-m", "bot.cli", "post", category, topic]):
+            if run_command(["python", "-m", "bot.cli", "post", category, topic], timeout=60):
                 success_count += 1
                 successful_operations.append(f"{category}: {topic}")
                 print(f"✅ Successfully generated and posted content for {category}: {topic}")

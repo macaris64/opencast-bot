@@ -5,7 +5,7 @@
   "prompt_template": "Generate a useful Git tip about {topic} for team collaboration. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T20:09:57.172179",
+  "updated_at": "2025-06-14T00:10:26.732258",
   "topics": [
     {
       "topic": "Commit message conventions",
@@ -13,7 +13,20 @@
     },
     {
       "topic": "Branch naming strategies",
-      "entries": []
+      "entries": [
+        {
+          "content": "Use clear, descriptive branch names to streamline collaboration. Include ticket numbers or feature names for better organization. #GitTips #TeamCollaboration",
+          "metadata": {
+            "length": 157,
+            "source": "openai",
+            "tags": [
+              "#GitTips",
+              "#TeamCollaboration"
+            ]
+          },
+          "created_at": "2025-06-14T00:10:26.732217"
+        }
+      ]
     },
     {
       "topic": "Code review workflows",
