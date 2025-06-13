@@ -8,6 +8,8 @@ on:
   schedule:
     # Run every hour
     - cron: "0 * * * *"
+  workflow_dispatch:
+    # Allow manual trigger
 
 jobs:
   test:
@@ -26,13 +28,21 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
+        env:
+          OPENAI_API_KEY: sk-test-key-for-testing
+          TWITTER_API_KEY: test-twitter-key
+          TWITTER_API_SECRET: test-twitter-secret
+          TWITTER_ACCESS_TOKEN: test-twitter-token
+          TWITTER_ACCESS_TOKEN_SECRET: test-twitter-token-secret
+          TELEGRAM_BOT_TOKEN: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+          TELEGRAM_CHAT_ID: -1001234567890
         run: |
           pytest --cov=bot --cov-report=term-missing --cov-fail-under=90
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
         with:

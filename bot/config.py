@@ -122,5 +122,22 @@ class Config(BaseSettings):
         return platforms
 
 
-# Global configuration instance
-config = Config() 
+# Global configuration instance - lazy loaded
+_config_instance = None
+
+def get_config() -> Config:
+    """Get the global configuration instance (lazy loaded)."""
+    global _config_instance
+    if _config_instance is None:
+        _config_instance = Config()
+    return _config_instance
+
+def reset_config():
+    """Reset the global configuration instance (useful for testing)."""
+    global _config_instance
+    _config_instance = None
+
+# For backward compatibility
+def config() -> Config:
+    """Get the global configuration instance."""
+    return get_config() 

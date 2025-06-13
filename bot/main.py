@@ -9,7 +9,7 @@ import asyncio
 import logging
 from typing import List, Optional
 
-from bot.config import Config, config
+from bot.config import Config, get_config
 from bot.db.json_orm import JsonORM
 from bot.generator import ContentGenerator
 from bot.models.category import Category

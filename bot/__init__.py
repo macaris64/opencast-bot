@@ -9,6 +9,6 @@ __version__ = "0.1.0"
 __author__ = "OpenCast Bot Team"
 __email__ = "contact@opencast-bot.dev"
 
-from bot.config import Config
+from bot.config import Config, get_config, reset_config
 
-__all__ = ["Config"] 
+__all__ = ["Config", "get_config", "reset_config"] 
