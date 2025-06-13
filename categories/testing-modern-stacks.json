@@ -5,7 +5,7 @@
   "prompt_template": "Generate a practical testing tip about {topic} for modern development stacks. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
   "created_at": "2025-01-27T00:00:00",
-  "updated_at": "2025-06-13T15:37:47.392996",
+  "updated_at": "2025-06-13T20:07:42.431277",
   "topics": [
     {
       "topic": "Best practices",
@@ -24,26 +24,99 @@
         }
       ]
     },
-    {"topic": "Component testing strategies", "entries": []},
-    {"topic": "End-to-end testing automation", "entries": []},
-    {"topic": "API testing frameworks", "entries": []},
-    {"topic": "Visual regression testing", "entries": []},
-    {"topic": "Performance testing tools", "entries": []},
-    {"topic": "Contract testing patterns", "entries": []},
-    {"topic": "Test data management", "entries": []},
-    {"topic": "Testing in production", "entries": []},
-    {"topic": "Mock and stub strategies", "entries": []},
-    {"topic": "Test-driven development", "entries": []},
-    {"topic": "Behavior-driven development", "entries": []},
-    {"topic": "Unit testing best practices", "entries": []},
-    {"topic": "Integration testing approaches", "entries": []},
-    {"topic": "Test automation frameworks", "entries": []},
-    {"topic": "Cross-browser testing", "entries": []},
-    {"topic": "Mobile testing strategies", "entries": []},
-    {"topic": "Load testing techniques", "entries": []},
-    {"topic": "Security testing automation", "entries": []},
-    {"topic": "Test coverage optimization", "entries": []},
-    {"topic": "Continuous testing pipelines", "entries": []}
+    {
+      "topic": "Component testing strategies",
+      "entries": []
+    },
+    {
+      "topic": "End-to-end testing automation",
+      "entries": []
+    },
+    {
+      "topic": "API testing frameworks",
+      "entries": []
+    },
+    {
+      "topic": "Visual regression testing",
+      "entries": []
+    },
+    {
+      "topic": "Performance testing tools",
+      "entries": []
+    },
+    {
+      "topic": "Contract testing patterns",
+      "entries": []
+    },
+    {
+      "topic": "Test data management",
+      "entries": []
+    },
+    {
+      "topic": "Testing in production",
+      "entries": []
+    },
+    {
+      "topic": "Mock and stub strategies",
+      "entries": []
+    },
+    {
+      "topic": "Test-driven development",
+      "entries": []
+    },
+    {
+      "topic": "Behavior-driven development",
+      "entries": []
+    },
+    {
+      "topic": "Unit testing best practices",
+      "entries": []
+    },
+    {
+      "topic": "Integration testing approaches",
+      "entries": []
+    },
+    {
+      "topic": "Test automation frameworks",
+      "entries": []
+    },
+    {
+      "topic": "Cross-browser testing",
+      "entries": []
+    },
+    {
+      "topic": "Mobile testing strategies",
+      "entries": []
+    },
+    {
+      "topic": "Load testing techniques",
+      "entries": []
+    },
+    {
+      "topic": "Security testing automation",
+      "entries": []
+    },
+    {
+      "topic": "Test coverage optimization",
+      "entries": []
+    },
+    {
+      "topic": "Continuous testing pipelines",
+      "entries": [
+        {
+          "content": "Avoid this: Skipping automated testing in your continuous pipeline #risk #bugs",
+          "metadata": {
+            "length": 78,
+            "source": "openai",
+            "tags": [
+              "#risk",
+              "#bugs"
+            ]
+          },
+          "created_at": "2025-06-13T20:07:42.431218"
+        }
+      ]
+    }
   ],
   "min_length": 20,
   "max_length": 220,
