@@ -1,16 +1,18 @@
 """
-Tests for content generator module in OpenCast Bot.
+Tests for content generator module.
 
-This module tests the ContentGenerator class and content generation logic
-defined in bot/generator.py.
+This module tests the content generation functionality including
+OpenAI API integration, content validation, and error handling.
 """
 
+import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 import pytest
 
-from bot.generator import ContentGenerator, ContentGenerationError
 from bot.config import Config
+from bot.generator import ContentGenerator, ContentGenerationError
 from bot.models.category import Category, CategoryEntry, CategoryTopic, CategoryMetadata
+from bot.utils.exceptions import APIError, ValidationError
 
 
 class TestContentGenerator:
@@ -18,22 +20,37 @@ class TestContentGenerator:
     
     @pytest.fixture
     def mock_config(self):
-        """Create a mock config for testing."""
-        config = Mock(spec=Config)
+        """Create a mock configuration for testing."""
+        config = Mock()
         config.openai_api_key = "test-api-key"
         config.openai_model = "gpt-3.5-turbo"
-        config.openai_max_tokens = 100
+        config.openai_max_tokens = 150
         config.openai_temperature = 0.7
-        config.content_min_length = 180
-        config.content_max_length = 200
+        config.content_min_length = 20
+        config.content_max_length = 220
         config.required_hashtag_count = 2
+        config.default_prompt_template = "Create a professional development tip about {topic}. Keep it concise and actionable. Include exactly 2 relevant hashtags."
+        config.dry_run = False
+        config.max_retries = 3
+        config.retry_delay = 1.0
         return config
     
     @pytest.fixture
     def generator(self):
         """Create a ContentGenerator instance for testing."""
-        # Create a real config with proper attributes
-        config = Config()
+        # Create a mock config to avoid .env dependency
+        config = Mock()
+        config.openai_api_key = "test-api-key"
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.content_min_length = 20
+        config.content_max_length = 220
+        config.required_hashtag_count = 2
+        config.default_prompt_template = "Create a professional development tip about {topic}. Keep it concise and actionable. Include exactly 2 relevant hashtags."
+        config.dry_run = False
+        config.max_retries = 3
+        config.retry_delay = 1.0
         return ContentGenerator(config)
     
     @pytest.fixture
@@ -74,15 +91,15 @@ class TestContentGenerator:
     @pytest.mark.asyncio
     async def test_generate_content_success(self, generator, sample_category):
         """Test successful content generation."""
-        valid_content = "This is a test content with proper length and formatting! #test #content"  # Valid length
+        # Create content that meets the length requirement (20-220 chars)
+        valid_content = "This is a test content with proper length and formatting! #test #content"  # ~72 chars - valid
         
         with patch.object(generator, '_call_openai_api', return_value=valid_content) as mock_api:
             result = await generator.generate_content(sample_category, "New Topic")
             
             assert result is not None
-            assert isinstance(result, CategoryEntry)
-            assert "#test" in result.content
-            assert "#content" in result.content
+            assert result.content == valid_content
+            assert len(result.metadata.tags) == 2
             mock_api.assert_called_once()
     
     @pytest.mark.asyncio
@@ -135,6 +152,7 @@ class TestContentGenerator:
     
     def test_validate_content_valid_length(self, generator, sample_category):
         """Test content validation with valid length."""
+        # Create content that meets the length requirement (20-220 chars)
         valid_content = "This is a valid content with proper length and formatting! #test #valid"
 
         with patch.object(generator, '_extract_hashtags', return_value=["#test", "#valid"]):
@@ -288,14 +306,295 @@ class TestContentGenerator:
         
         assert result == content
     
-    def test_adjust_content_length_too_long(self, generator, sample_category):
+    def test_adjust_content_length_too_long(self):
         """Test content length adjustment when content is too long."""
-        # Create a very long content
-        long_content = "This is a very long content that exceeds the maximum length limit and needs to be truncated properly while preserving hashtags and maintaining readability for users who will read this content on social media platforms #test #long"
+        # Create a proper mock config
+        config = Mock()
+        config.content_max_length = 50
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
         
-        result = generator._adjust_content_length(long_content, sample_category)
+        generator = ContentGenerator(config)
         
-        # Should be shorter than original but still contain hashtags
-        assert len(result) < len(long_content)
-        assert "#test" in result
-        assert "#long" in result 
+        # Create a category with custom max length
+        category = Category(
+            category_id="test",
+            name="Test Category",
+            description="Test",
+            language="en",
+            prompt_template="Test {topic}",
+            topics=[]
+        )
+        
+        # Test with content that's too long
+        long_content = "This is a very long content that exceeds the maximum length limit and should be truncated properly while preserving hashtags #test #demo"
+        
+        adjusted = generator._adjust_content_length(long_content, category)
+        
+        # Should be truncated but keep hashtags
+        assert len(adjusted) <= 50
+        assert "#test" in adjusted
+        assert "#demo" in adjusted
+    
+    def test_extract_hashtags_error_handling(self):
+        """Test hashtag extraction with error handling."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        
+        generator = ContentGenerator(config)
+        
+        # Test with problematic content that might cause regex issues
+        with patch('re.findall') as mock_findall:
+            mock_findall.side_effect = Exception("Regex error")
+            
+            hashtags = generator._extract_hashtags("Content with #hashtag")
+            
+            # Should return empty list on error
+            assert hashtags == []
+    
+    def test_validate_content_exception_handling(self):
+        """Test content validation with exception handling."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.content_min_length = 20
+        config.content_max_length = 220
+        config.required_hashtag_count = 2
+        
+        generator = ContentGenerator(config)
+        
+        # Create a category
+        category = Category(
+            category_id="test",
+            name="Test Category", 
+            description="Test",
+            language="en",
+            prompt_template="Test {topic}",
+            topics=[]
+        )
+        
+        # Mock the _extract_hashtags method to raise an exception
+        with patch.object(generator, '_extract_hashtags') as mock_extract:
+            mock_extract.side_effect = Exception("Hashtag extraction error")
+            
+            result = generator._validate_content("Test content #test #demo", category)
+            
+            # Should return False on exception
+            assert result is False
+    
+    def test_adjust_content_length_exception_handling(self):
+        """Test content length adjustment with exception handling."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.content_max_length = 50
+        
+        generator = ContentGenerator(config)
+        
+        # Create a category
+        category = Category(
+            category_id="test",
+            name="Test Category",
+            description="Test", 
+            language="en",
+            prompt_template="Test {topic}",
+            topics=[]
+        )
+        
+        # Mock the _extract_hashtags method to raise an exception
+        with patch.object(generator, '_extract_hashtags') as mock_extract:
+            mock_extract.side_effect = Exception("Hashtag extraction error")
+            
+            original_content = "Test content #test #demo"
+            result = generator._adjust_content_length(original_content, category)
+            
+            # Should return original content on exception
+            assert result == original_content
+    
+    def test_call_openai_api_rate_limit_error(self):
+        """Test OpenAI API call with rate limit error."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.openai_api_key = "test-key"
+        
+        generator = ContentGenerator(config)
+        
+        async def run_test():
+            with patch('openai.AsyncOpenAI') as mock_openai:
+                mock_client = AsyncMock()
+                mock_openai.return_value = mock_client
+                mock_client.chat.completions.create.side_effect = Exception("rate limit exceeded")
+                
+                with pytest.raises(APIError) as exc_info:
+                    await generator._call_openai_api("Test {topic}", "test topic")
+                
+                assert "rate limit" in str(exc_info.value).lower()
+        
+        asyncio.run(run_test())
+    
+    def test_call_openai_api_quota_error(self):
+        """Test OpenAI API call with quota error."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.openai_api_key = "test-key"
+        
+        generator = ContentGenerator(config)
+        
+        async def run_test():
+            with patch('openai.AsyncOpenAI') as mock_openai:
+                mock_client = AsyncMock()
+                mock_openai.return_value = mock_client
+                mock_client.chat.completions.create.side_effect = Exception("quota exceeded")
+                
+                with pytest.raises(APIError) as exc_info:
+                    await generator._call_openai_api("Test {topic}", "test topic")
+                
+                assert "quota" in str(exc_info.value).lower()
+        
+        asyncio.run(run_test())
+    
+    def test_call_openai_api_authentication_error(self):
+        """Test OpenAI API call with authentication error."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.openai_api_key = "test-key"
+        
+        generator = ContentGenerator(config)
+        
+        async def run_test():
+            with patch('openai.AsyncOpenAI') as mock_openai:
+                mock_client = AsyncMock()
+                mock_openai.return_value = mock_client
+                mock_client.chat.completions.create.side_effect = Exception("authentication failed")
+                
+                with pytest.raises(APIError) as exc_info:
+                    await generator._call_openai_api("Test {topic}", "test topic")
+                
+                assert "authentication" in str(exc_info.value).lower()
+        
+        asyncio.run(run_test())
+    
+    def test_call_openai_api_empty_response(self):
+        """Test OpenAI API call with empty response."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.openai_api_key = "test-key"
+        
+        generator = ContentGenerator(config)
+        
+        async def run_test():
+            with patch('openai.AsyncOpenAI') as mock_openai:
+                mock_client = AsyncMock()
+                mock_openai.return_value = mock_client
+                
+                # Mock empty response
+                mock_response = Mock()
+                mock_response.choices = []
+                mock_client.chat.completions.create.return_value = mock_response
+                
+                with pytest.raises(APIError) as exc_info:
+                    await generator._call_openai_api("Test {topic}", "test topic")
+                
+                assert "empty response" in str(exc_info.value).lower()
+        
+        asyncio.run(run_test())
+    
+    def test_generate_content_validation_error_path(self):
+        """Test generate content with validation error path."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.max_retries = 3
+        config.retry_delay = 1.0
+        
+        generator = ContentGenerator(config)
+        
+        # Create category
+        category = Category(
+            category_id="test",
+            name="Test Category",
+            description="Test",
+            language="en", 
+            prompt_template="Test {topic}",
+            topics=[]
+        )
+        
+        async def run_test():
+            # Mock API to return invalid content
+            with patch.object(generator, '_call_openai_api') as mock_api:
+                mock_api.return_value = "Short"  # Too short, will fail validation
+                
+                result = await generator.generate_content(category, "test topic")
+                
+                # Should return None due to validation failure
+                assert result is None
+        
+        asyncio.run(run_test())
+    
+    def test_generate_content_max_retries_exceeded(self):
+        """Test generate content when max retries are exceeded."""
+        # Create a proper mock config
+        config = Mock()
+        config.openai_model = "gpt-3.5-turbo"
+        config.openai_max_tokens = 150
+        config.openai_temperature = 0.7
+        config.dry_run = False
+        config.max_retries = 2
+        config.retry_delay = 1.0
+        
+        generator = ContentGenerator(config)
+        
+        # Create category
+        category = Category(
+            category_id="test",
+            name="Test Category",
+            description="Test",
+            language="en",
+            prompt_template="Test {topic}",
+            topics=[]
+        )
+        
+        async def run_test():
+            # Mock API to always fail
+            with patch.object(generator, '_call_openai_api') as mock_api:
+                mock_api.side_effect = APIError("API failed")
+                
+                result = await generator.generate_content(category, "test topic")
+                
+                # Should return None after max retries
+                assert result is None
+                # Should have been called max_retries times
+                assert mock_api.call_count == config.max_retries
+        
+        asyncio.run(run_test()) 

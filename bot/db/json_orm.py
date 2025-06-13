@@ -6,7 +6,6 @@ for managing category data stored in JSON files.
 """
 
 import json
-import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Type, TypeVar
@@ -14,28 +13,17 @@ from typing import Dict, List, Optional, Type, TypeVar
 from pydantic import BaseModel, ValidationError
 
 from bot.models.category import Category
-
-logger = logging.getLogger(__name__)
+from bot.utils import (
+    get_logger, LoggerMixin, log_execution_time,
+    OpenCastBotError, ValidationError as BotValidationError,
+    CategoryNotFoundError, InvalidCategoryError,
+    ResourceNotFoundError, InvalidDataError
+)
 
 T = TypeVar('T', bound=BaseModel)
 
 
-class CategoryNotFoundError(Exception):
-    """Exception raised when a category is not found."""
-    
-    def __init__(self, category_id: str):
-        self.category_id = category_id
-        super().__init__(f"Category '{category_id}' not found")
-
-
-class InvalidCategoryError(Exception):
-    """Exception raised when category data is invalid."""
-    
-    def __init__(self, message: str):
-        super().__init__(message)
-
-
-class JSONCategoryManager:
+class JSONCategoryManager(LoggerMixin):
     """JSON-based category manager for OpenCast Bot."""
     
     def __init__(self, data_directory: str = "categories") -> None:
@@ -45,9 +33,15 @@ class JSONCategoryManager:
         Args:
             data_directory: Directory where JSON files are stored
         """
+        super().__init__()
         self.data_directory = Path(data_directory)
         self.data_directory.mkdir(exist_ok=True)
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        
+        self.logger.info(
+            "JSONCategoryManager initialized",
+            data_directory=str(self.data_directory),
+            directory_exists=self.data_directory.exists()
+        )
     
     def _get_category_file_path(self, category_id: str) -> Path:
         """
@@ -69,17 +63,29 @@ class JSONCategoryManager:
             data: Category data dictionary
             
         Raises:
-            InvalidCategoryError: If data structure is invalid
+            InvalidDataError: If data structure is invalid
         """
         required_fields = ["category_id", "name"]
         
         for field in required_fields:
             if field not in data:
-                raise InvalidCategoryError(f"Missing required field: {field}")
+                raise InvalidDataError(
+                    f"Missing required field: {field}",
+                    field_name=field,
+                    data_type="category",
+                    validation_rule="required_field"
+                )
         
         if "topics" in data and not isinstance(data["topics"], list):
-            raise InvalidCategoryError("Topics field must be a list")
+            raise InvalidDataError(
+                "Topics field must be a list",
+                field_name="topics",
+                field_value=type(data["topics"]).__name__,
+                data_type="category",
+                validation_rule="field_type"
+            )
     
+    @log_execution_time
     def list_categories(self) -> List[str]:
         """
         List all available category IDs.
@@ -91,12 +97,24 @@ class JSONCategoryManager:
             json_files = list(self.data_directory.glob("*.json"))
             category_ids = [f.stem for f in json_files]
             
-            self.logger.info(f"Found {len(category_ids)} categories: {category_ids}")
+            self.logger.info(
+                "Listed categories",
+                category_count=len(category_ids),
+                categories=category_ids
+            )
             return category_ids
             
         except Exception as e:
-            self.logger.error(f"Failed to list categories: {str(e)}")
-            return []
+            self.logger.error(
+                "Failed to list categories",
+                error=str(e),
+                data_directory=str(self.data_directory)
+            )
+            raise OpenCastBotError(
+                f"Failed to list categories: {str(e)}",
+                context={"data_directory": str(self.data_directory)},
+                cause=e
+            )
     
     def category_exists(self, category_id: str) -> bool:
         """
@@ -109,8 +127,18 @@ class JSONCategoryManager:
             True if category file exists, False otherwise
         """
         file_path = self._get_category_file_path(category_id)
-        return file_path.exists()
+        exists = file_path.exists()
+        
+        self.logger.debug(
+            "Category existence check",
+            category_id=category_id,
+            file_path=str(file_path),
+            exists=exists
+        )
+        
+        return exists
     
+    @log_execution_time
     def load_category(self, category_id: str) -> Category:
         """
         Load a category from JSON file.
@@ -123,11 +151,16 @@ class JSONCategoryManager:
             
         Raises:
             CategoryNotFoundError: If category file doesn't exist
-            InvalidCategoryError: If category data is invalid
+            InvalidDataError: If category data is invalid
         """
         file_path = self._get_category_file_path(category_id)
         
         if not file_path.exists():
+            self.logger.warning(
+                "Category file not found",
+                category_id=category_id,
+                file_path=str(file_path)
+            )
             raise CategoryNotFoundError(category_id)
         
         try:
@@ -140,16 +173,46 @@ class JSONCategoryManager:
             # Create and validate Category object
             category = Category.model_validate(category_data)
             
-            self.logger.info(f"Loaded category '{category_id}' from {file_path}")
+            self.logger.info(
+                "Category loaded successfully",
+                category_id=category_id,
+                file_path=str(file_path),
+                topic_count=len(category.topics) if category.topics else 0
+            )
             return category
             
         except json.JSONDecodeError as e:
-            raise InvalidCategoryError(f"Invalid JSON in category file: {str(e)}")
+            error = InvalidDataError(
+                f"Invalid JSON in category file: {str(e)}",
+                field_name="json_content",
+                data_type="category_file",
+                validation_rule="valid_json",
+                context={"file_path": str(file_path), "category_id": category_id}
+            )
+            self.logger.error("JSON decode error", error=error)
+            raise error
+            
         except ValidationError as e:
-            raise InvalidCategoryError(f"Invalid category data structure: {str(e)}")
+            error = InvalidDataError(
+                f"Invalid category data structure: {str(e)}",
+                field_name="category_structure",
+                data_type="category",
+                validation_rule="pydantic_model",
+                context={"file_path": str(file_path), "category_id": category_id}
+            )
+            self.logger.error("Category validation error", error=error)
+            raise error
+            
         except Exception as e:
-            raise InvalidCategoryError(f"Failed to load category: {str(e)}")
+            error = OpenCastBotError(
+                f"Failed to load category: {str(e)}",
+                context={"file_path": str(file_path), "category_id": category_id},
+                cause=e
+            )
+            self.logger.error("Category load error", error=error)
+            raise error
     
+    @log_execution_time
     def save_category(self, category: Category) -> None:
         """
         Save a category to JSON file.
@@ -158,7 +221,7 @@ class JSONCategoryManager:
             category: Category object to save
             
         Raises:
-            InvalidCategoryError: If save operation fails
+            InvalidDataError: If save operation fails
         """
         try:
             # Ensure directory exists
@@ -173,11 +236,26 @@ class JSONCategoryManager:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(category_dict, f, indent=2, ensure_ascii=False)
             
-            self.logger.info(f"Saved category '{category.category_id}' to {file_path}")
+            self.logger.info(
+                "Category saved successfully",
+                category_id=category.category_id,
+                file_path=str(file_path),
+                topic_count=len(category.topics) if category.topics else 0
+            )
             
         except Exception as e:
-            raise InvalidCategoryError(f"Failed to save category '{category.category_id}': {str(e)}")
+            error = OpenCastBotError(
+                f"Failed to save category '{category.category_id}': {str(e)}",
+                context={
+                    "category_id": category.category_id,
+                    "file_path": str(self._get_category_file_path(category.category_id))
+                },
+                cause=e
+            )
+            self.logger.error("Category save error", error=error)
+            raise error
     
+    @log_execution_time
     def delete_category(self, category_id: str) -> None:
         """
         Delete a category file.
@@ -187,20 +265,36 @@ class JSONCategoryManager:
             
         Raises:
             CategoryNotFoundError: If category file doesn't exist
-            InvalidCategoryError: If delete operation fails
+            OpenCastBotError: If delete operation fails
         """
         file_path = self._get_category_file_path(category_id)
         
         if not file_path.exists():
+            self.logger.warning(
+                "Cannot delete non-existent category",
+                category_id=category_id,
+                file_path=str(file_path)
+            )
             raise CategoryNotFoundError(category_id)
         
         try:
             file_path.unlink()
-            self.logger.info(f"Deleted category '{category_id}' file: {file_path}")
+            self.logger.info(
+                "Category deleted successfully",
+                category_id=category_id,
+                file_path=str(file_path)
+            )
             
         except Exception as e:
-            raise InvalidCategoryError(f"Failed to delete category '{category_id}': {str(e)}")
+            error = OpenCastBotError(
+                f"Failed to delete category '{category_id}': {str(e)}",
+                context={"category_id": category_id, "file_path": str(file_path)},
+                cause=e
+            )
+            self.logger.error("Category delete error", error=error)
+            raise error
     
+    @log_execution_time
     def get_category_stats(self, category_id: str) -> Dict[str, any]:
         """
         Get statistics for a category.
@@ -218,7 +312,7 @@ class JSONCategoryManager:
         
         total_entries = sum(len(topic.entries) for topic in category.topics)
         
-        return {
+        stats = {
             "category_id": category.category_id,
             "name": category.name,
             "topic_count": len(category.topics),
@@ -226,7 +320,16 @@ class JSONCategoryManager:
             "description": category.description,
             "language": category.language
         }
+        
+        self.logger.info(
+            "Category stats generated",
+            category_id=category_id,
+            stats=stats
+        )
+        
+        return stats
     
+    @log_execution_time
     def backup_category(self, category_id: str) -> Path:
         """
         Create a backup of a category file.
@@ -239,10 +342,16 @@ class JSONCategoryManager:
             
         Raises:
             CategoryNotFoundError: If category doesn't exist
+            OpenCastBotError: If backup operation fails
         """
         file_path = self._get_category_file_path(category_id)
         
         if not file_path.exists():
+            self.logger.warning(
+                "Cannot backup non-existent category",
+                category_id=category_id,
+                file_path=str(file_path)
+            )
             raise CategoryNotFoundError(category_id)
         
         # Create backup filename with timestamp
@@ -255,14 +364,29 @@ class JSONCategoryManager:
                  open(backup_path, 'w', encoding='utf-8') as dst:
                 dst.write(src.read())
             
-            self.logger.info(f"Created backup: {backup_path}")
+            self.logger.info(
+                "Category backup created",
+                category_id=category_id,
+                original_path=str(file_path),
+                backup_path=str(backup_path)
+            )
             return backup_path
             
         except Exception as e:
-            raise InvalidCategoryError(f"Failed to backup category '{category_id}': {str(e)}")
+            error = OpenCastBotError(
+                f"Failed to backup category '{category_id}': {str(e)}",
+                context={
+                    "category_id": category_id,
+                    "file_path": str(file_path),
+                    "backup_path": str(backup_path)
+                },
+                cause=e
+            )
+            self.logger.error("Category backup error", error=error)
+            raise error
 
 
-class JsonORM:
+class JsonORM(LoggerMixin):
     """Simple JSON-based ORM for managing category data files."""
     
     def __init__(self, data_directory: str = "categories") -> None:
@@ -272,9 +396,14 @@ class JsonORM:
         Args:
             data_directory: Directory where JSON files are stored
         """
+        super().__init__()
         self.data_directory = Path(data_directory)
         self.data_directory.mkdir(exist_ok=True)
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        
+        self.logger.info(
+            "JsonORM initialized",
+            data_directory=str(self.data_directory)
+        )
     
     def _get_file_path(self, category_id: str) -> Path:
         """
@@ -288,6 +417,7 @@ class JsonORM:
         """
         return self.data_directory / f"{category_id}.json"
     
+    @log_execution_time
     def save_category(self, category: Category) -> bool:
         """
         Save a category to JSON file.
@@ -308,13 +438,22 @@ class JsonORM:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(category_dict, f, indent=2, ensure_ascii=False)
             
-            self.logger.info(f"Saved category '{category.category_id}' to {file_path}")
+            self.logger.info(
+                "Category saved via JsonORM",
+                category_id=category.category_id,
+                file_path=str(file_path)
+            )
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to save category '{category.category_id}': {str(e)}")
+            self.logger.error(
+                "Failed to save category via JsonORM",
+                category_id=category.category_id,
+                error=str(e)
+            )
             return False
     
+    @log_execution_time
     def load_category(self, category_id: str) -> Optional[Category]:
         """
         Load a category from JSON file.
@@ -329,7 +468,11 @@ class JsonORM:
             file_path = self._get_file_path(category_id)
             
             if not file_path.exists():
-                self.logger.warning(f"Category file not found: {file_path}")
+                self.logger.warning(
+                    "Category file not found for JsonORM load",
+                    category_id=category_id,
+                    file_path=str(file_path)
+                )
                 return None
             
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -338,11 +481,19 @@ class JsonORM:
             # Validate and create Category object
             category = Category.model_validate(category_data)
             
-            self.logger.info(f"Loaded category '{category_id}' from {file_path}")
+            self.logger.info(
+                "Category loaded via JsonORM",
+                category_id=category_id,
+                file_path=str(file_path)
+            )
             return category
             
         except Exception as e:
-            self.logger.error(f"Failed to load category '{category_id}': {str(e)}")
+            self.logger.error(
+                "Failed to load category via JsonORM",
+                category_id=category_id,
+                error=str(e)
+            )
             return None
     
     def category_exists(self, category_id: str) -> bool:
@@ -356,8 +507,18 @@ class JsonORM:
             True if category file exists, False otherwise
         """
         file_path = self._get_file_path(category_id)
-        return file_path.exists()
+        exists = file_path.exists()
+        
+        self.logger.debug(
+            "Category existence check via JsonORM",
+            category_id=category_id,
+            file_path=str(file_path),
+            exists=exists
+        )
+        
+        return exists
     
+    @log_execution_time
     def list_categories(self) -> List[str]:
         """
         List all available category IDs.
@@ -369,13 +530,22 @@ class JsonORM:
             json_files = list(self.data_directory.glob("*.json"))
             category_ids = [f.stem for f in json_files]
             
-            self.logger.info(f"Found {len(category_ids)} categories: {category_ids}")
+            self.logger.info(
+                "Categories listed via JsonORM",
+                category_count=len(category_ids),
+                categories=category_ids
+            )
             return category_ids
             
         except Exception as e:
-            self.logger.error(f"Failed to list categories: {str(e)}")
+            self.logger.error(
+                "Failed to list categories via JsonORM",
+                error=str(e),
+                data_directory=str(self.data_directory)
+            )
             return []
     
+    @log_execution_time
     def delete_category(self, category_id: str) -> bool:
         """
         Delete a category file.
@@ -390,17 +560,30 @@ class JsonORM:
             file_path = self._get_file_path(category_id)
             
             if not file_path.exists():
-                self.logger.warning(f"Category file not found for deletion: {file_path}")
+                self.logger.warning(
+                    "Category file not found for deletion via JsonORM",
+                    category_id=category_id,
+                    file_path=str(file_path)
+                )
                 return False
             
             file_path.unlink()
-            self.logger.info(f"Deleted category '{category_id}' file: {file_path}")
+            self.logger.info(
+                "Category deleted via JsonORM",
+                category_id=category_id,
+                file_path=str(file_path)
+            )
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to delete category '{category_id}': {str(e)}")
+            self.logger.error(
+                "Failed to delete category via JsonORM",
+                category_id=category_id,
+                error=str(e)
+            )
             return False
     
+    @log_execution_time
     def backup_category(self, category_id: str, backup_suffix: str = ".backup") -> bool:
         """
         Create a backup of a category file.
@@ -417,7 +600,11 @@ class JsonORM:
             backup_path = original_path.with_suffix(f"{original_path.suffix}{backup_suffix}")
             
             if not original_path.exists():
-                self.logger.warning(f"Cannot backup non-existent category: {original_path}")
+                self.logger.warning(
+                    "Cannot backup non-existent category via JsonORM",
+                    category_id=category_id,
+                    original_path=str(original_path)
+                )
                 return False
             
             # Copy file content
@@ -425,9 +612,18 @@ class JsonORM:
                  open(backup_path, 'w', encoding='utf-8') as dst:
                 dst.write(src.read())
             
-            self.logger.info(f"Created backup: {backup_path}")
+            self.logger.info(
+                "Category backup created via JsonORM",
+                category_id=category_id,
+                original_path=str(original_path),
+                backup_path=str(backup_path)
+            )
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to backup category '{category_id}': {str(e)}")
+            self.logger.error(
+                "Failed to backup category via JsonORM",
+                category_id=category_id,
+                error=str(e)
+            )
             return False 

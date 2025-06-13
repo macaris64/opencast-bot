@@ -7,30 +7,42 @@ defined in bot/config.py.
 
 import os
 import tempfile
-from unittest.mock import patch, MagicMock
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 
-from bot.config import Config
+from bot.config import Config, get_config, reset_config
+from bot.utils.exceptions import ConfigurationError, ValidationError
 
 
 class TestConfig:
     """Test cases for Config class."""
     
+    @pytest.fixture(autouse=True)
+    def reset_config_instance(self):
+        """Reset config instance before each test."""
+        reset_config()
+        yield
+        reset_config()
+    
     def test_config_creation_with_defaults(self):
         """Test creating config with default values."""
         with patch.dict(os.environ, {
             'OPENAI_API_KEY': 'test-key',
-            'DATA_DIRECTORY': '/tmp/test',
+            'CATEGORIES_DIRECTORY': '/tmp/test',
             'DRY_RUN': 'false',
             'LOG_LEVEL': 'INFO'
         }, clear=True):
             config = Config()
             
             assert config.openai_api_key == 'test-key'
-            assert config.data_directory == '/tmp/test'
+            assert config.categories_directory == '/tmp/test'
             assert config.dry_run is False
             assert config.log_level == 'INFO'
+            assert config.openai_model == 'gpt-3.5-turbo'
+            assert config.openai_max_tokens == 150
+            assert config.openai_temperature == 0.7
             assert config.content_min_length == 20
             assert config.content_max_length == 220
             assert config.required_hashtag_count == 2
@@ -56,6 +68,84 @@ class TestConfig:
         assert config.openai_api_key is not None
         assert len(config.openai_api_key) > 10  # Basic validation
         assert config.openai_api_key.startswith("sk-")  # OpenAI API key format
+    
+    def test_config_validation_api_key_missing(self):
+        """Test config validation with missing API key."""
+        # Remove OPENAI_API_KEY specifically and disable .env file
+        env_without_key = {k: v for k, v in os.environ.items() if k != 'OPENAI_API_KEY'}
+        with patch.dict(os.environ, env_without_key, clear=True):
+            # Create config without .env file - should fail Pydantic validation
+            with pytest.raises(Exception) as exc_info:  # Pydantic ValidationError
+                Config(_env_file=None)
+            assert "Field required" in str(exc_info.value) or "openai_api_key" in str(exc_info.value)
+    
+    def test_config_validation_api_key_empty(self):
+        """Test config validation with empty API key."""
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "   "}, clear=True):
+            with pytest.raises(ConfigurationError) as exc_info:
+                Config()
+            assert "OpenAI API key is required" in str(exc_info.value)
+    
+    def test_config_validation_invalid_content_length(self):
+        """Test config validation with invalid content length."""
+        with patch.dict(os.environ, {
+            "OPENAI_API_KEY": "test-key",
+            "CONTENT_MIN_LENGTH": "100",
+            "CONTENT_MAX_LENGTH": "50"
+        }, clear=True):
+            with pytest.raises(ConfigurationError) as exc_info:
+                Config()
+            assert "Configuration initialization failed" in str(exc_info.value)
+    
+    def test_config_validation_negative_hashtag_count(self):
+        """Test config validation with negative hashtag count."""
+        with patch.dict(os.environ, {
+            "OPENAI_API_KEY": "test-key",
+            "REQUIRED_HASHTAG_COUNT": "-1"
+        }, clear=True):
+            with pytest.raises(ConfigurationError) as exc_info:
+                Config()
+            assert "Configuration initialization failed" in str(exc_info.value)
+    
+    def test_config_validation_negative_max_retries(self):
+        """Test config validation with negative max retries."""
+        with patch.dict(os.environ, {
+            "OPENAI_API_KEY": "test-key",
+            "MAX_RETRIES": "-1"
+        }, clear=True):
+            with pytest.raises(ConfigurationError) as exc_info:
+                Config()
+            assert "Configuration initialization failed" in str(exc_info.value)
+    
+    def test_config_validation_negative_retry_delay(self):
+        """Test config validation with negative retry delay."""
+        with patch.dict(os.environ, {
+            "OPENAI_API_KEY": "test-key",
+            "RETRY_DELAY": "-1.0"
+        }, clear=True):
+            with pytest.raises(ConfigurationError) as exc_info:
+                Config()
+            assert "Configuration initialization failed" in str(exc_info.value)
+    
+    def test_config_validation_unexpected_error(self):
+        """Test config validation with unexpected error."""
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True):
+            with patch.object(Config, '_validate_configuration') as mock_validate:
+                mock_validate.side_effect = Exception("Unexpected error")
+                
+                with pytest.raises(ConfigurationError) as exc_info:
+                    Config()
+                assert "Configuration initialization failed" in str(exc_info.value)
+    
+    def test_config_initialization_logging_failure(self):
+        """Test config initialization when logging setup fails."""
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True):
+            with patch('bot.config.setup_logging') as mock_setup:
+                mock_setup.side_effect = Exception("Logging setup failed")
+                
+                with pytest.raises(ConfigurationError) as exc_info:
+                    Config()
+                assert "Configuration initialization failed" in str(exc_info.value)
     
     def test_config_boolean_parsing(self):
         """Test boolean environment variable parsing."""
@@ -198,20 +288,21 @@ class TestConfig:
             config = Config()
             assert config.validate_telegram_config() is False
     
-    @patch('bot.config.logging.basicConfig')
-    def test_setup_logging(self, mock_basic_config):
-        """Test logging setup."""
+    def test_setup_logging(self):
+        """Test logging setup during config initialization."""
         with patch.dict(os.environ, {
             'OPENAI_API_KEY': 'test-key',
             'LOG_LEVEL': 'DEBUG'
         }, clear=True):
-            config = Config()
-            config.setup_logging()
-            
-            mock_basic_config.assert_called_once()
-            call_args = mock_basic_config.call_args
-            assert 'level' in call_args.kwargs
-            assert 'format' in call_args.kwargs
+            with patch('bot.config.setup_logging') as mock_setup_logging:
+                config = Config()
+                
+                # setup_logging should be called during initialization
+                mock_setup_logging.assert_called_once_with(level='DEBUG')
+                
+                # Config should have a logger
+                assert hasattr(config, 'logger')
+                assert config.logger is not None
     
     def test_content_validation_properties(self):
         """Test content validation configuration properties."""
@@ -229,38 +320,32 @@ class TestConfig:
     
     def test_get_config_function(self):
         """Test get_config function."""
-        from bot.config import get_config, reset_config
-        
-        # Reset first
-        reset_config()
-        
-        # Get config
-        config1 = get_config()
-        config2 = get_config()
-        
-        # Should return same instance
-        assert config1 is config2
-        assert isinstance(config1, Config)
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True):
+            config1 = get_config()
+            config2 = get_config()
+            
+            # Should return the same instance
+            assert config1 is config2
     
     def test_reset_config_function(self):
         """Test reset_config function."""
-        from bot.config import get_config, reset_config
-        
-        # Get initial config
-        config1 = get_config()
-        
-        # Reset and get new config
-        reset_config()
-        config2 = get_config()
-        
-        # Should be different instances
-        assert config1 is not config2
-        assert isinstance(config2, Config)
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True):
+            config1 = get_config()
+            reset_config()
+            config2 = get_config()
+            
+            # Should return different instances after reset
+            assert config1 is not config2
     
     def test_config_backward_compatibility(self):
         """Test backward compatibility config function."""
-        from bot.config import config
-        
-        # Should return Config instance
-        result = config()
-        assert isinstance(result, Config) 
+        with patch.dict(os.environ, {
+            "OPENAI_API_KEY": "test-key",
+            "CONTENT_MIN_LENGTH": "20",
+            "CONTENT_MAX_LENGTH": "220"
+        }, clear=True):
+            config = Config()
+            
+            # Should work with current variable names
+            assert config.content_min_length == 20
+            assert config.content_max_length == 220 

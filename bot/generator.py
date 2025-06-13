@@ -5,7 +5,6 @@ This module handles content generation using OpenAI API based on
 category templates and topics.
 """
 
-import logging
 import re
 from typing import List, Optional
 import asyncio
@@ -16,24 +15,14 @@ from pydantic import BaseModel
 from bot.config import Config
 from bot.models.category import Category, CategoryEntry, CategoryMetadata
 from bot.models.content_seeds import get_seed_manager
+from bot.utils import (
+    get_logger, LoggerMixin, log_execution_time,
+    ContentGenerationError, APIError, ValidationError, 
+    RateLimitError, AuthenticationError, NetworkError
+)
 
 
-class ContentGenerationError(Exception):
-    """Custom exception for content generation errors."""
-    pass
-
-
-class APIError(ContentGenerationError):
-    """Exception raised when API call fails."""
-    pass
-
-
-class ValidationError(ContentGenerationError):
-    """Exception raised when content validation fails."""
-    pass
-
-
-class ContentGenerator:
+class ContentGenerator(LoggerMixin):
     """Generator class for creating content using OpenAI API."""
     
     def __init__(self, config: Config) -> None:
@@ -41,10 +30,18 @@ class ContentGenerator:
         Initialize content generator with configuration.
         
         Args:
-            config: Application configuration
+            config: Configuration object containing API keys and settings
         """
+        super().__init__()
         self.config = config
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        
+        self.logger.info(
+            "ContentGenerator initialized",
+            model=config.openai_model,
+            max_tokens=config.openai_max_tokens,
+            temperature=config.openai_temperature,
+            dry_run=config.dry_run
+        )
         
         # Configure OpenAI client
         openai.api_key = config.openai_api_key
@@ -206,23 +203,55 @@ class ContentGenerator:
         Returns:
             True if content is valid, False otherwise
         """
-        # Get effective validation settings
-        min_length = category.get_effective_min_length(self.config.content_min_length)
-        max_length = category.get_effective_max_length(self.config.content_max_length)
-        required_hashtags = category.get_effective_required_hashtags(self.config.required_hashtag_count)
-        
-        # Check length
-        if not (min_length <= len(content) <= max_length):
-            self.logger.warning(f"Content length {len(content)} not in range {min_length}-{max_length}")
+        try:
+            # Get effective validation settings
+            min_length = category.get_effective_min_length(self.config.content_min_length)
+            max_length = category.get_effective_max_length(self.config.content_max_length)
+            required_hashtags = category.get_effective_required_hashtags(self.config.required_hashtag_count)
+            
+            # Check length
+            content_length = len(content)
+            if not (min_length <= content_length <= max_length):
+                self.logger.warning(
+                    "Content length validation failed",
+                    content_length=content_length,
+                    min_length=min_length,
+                    max_length=max_length,
+                    content_preview=content[:50] + "..."
+                )
+                return False
+            
+            # Check hashtag count
+            hashtags = self._extract_hashtags(content)
+            hashtag_count = len(hashtags)
+            if hashtag_count != required_hashtags:
+                self.logger.warning(
+                    "Hashtag count validation failed",
+                    expected_hashtags=required_hashtags,
+                    found_hashtags=hashtag_count,
+                    hashtags=hashtags,
+                    content_preview=content[:50] + "..."
+                )
+                return False
+            
+            self.logger.debug(
+                "Content validation successful",
+                content_length=content_length,
+                hashtag_count=hashtag_count,
+                hashtags=hashtags
+            )
+            
+            return True
+            
+        except Exception as e:
+            validation_error = ValidationError(
+                "Error during content validation",
+                field_name="content",
+                field_value=content[:100],
+                cause=e
+            )
+            self.logger.error("Content validation error", error=validation_error)
             return False
-        
-        # Check hashtag count
-        hashtags = self._extract_hashtags(content)
-        if len(hashtags) != required_hashtags:
-            self.logger.warning(f"Expected {required_hashtags} hashtags, found {len(hashtags)}")
-            return False
-        
-        return True
     
     def _extract_hashtags(self, content: str) -> List[str]:
         """
@@ -234,10 +263,26 @@ class ContentGenerator:
         Returns:
             List of hashtags found in content
         """
-        # Find all hashtags using regex
-        hashtag_pattern = r'#\w+'
-        hashtags = re.findall(hashtag_pattern, content)
-        return hashtags 
+        try:
+            # Find all hashtags using regex
+            hashtag_pattern = r'#\w+'
+            hashtags = re.findall(hashtag_pattern, content)
+            
+            self.logger.debug(
+                "Hashtags extracted",
+                hashtag_count=len(hashtags),
+                hashtags=hashtags
+            )
+            
+            return hashtags
+            
+        except Exception as e:
+            self.logger.error(
+                "Error extracting hashtags",
+                error=e,
+                content_preview=content[:100] + "..."
+            )
+            return []
 
     def _adjust_content_length(self, content: str, category: Category) -> str:
         """
@@ -250,38 +295,68 @@ class ContentGenerator:
         Returns:
             Adjusted content text
         """
-        # Get effective length settings
-        max_length = category.get_effective_max_length(self.config.content_max_length)
-        
-        # Extract hashtags first
-        hashtags = self._extract_hashtags(content)
-        
-        # Remove hashtags from content to work with main text
-        main_text = content
-        for hashtag in hashtags:
-            main_text = main_text.replace(hashtag, "").strip()
-        
-        # Calculate target length (total - hashtags - spaces)
-        hashtag_length = sum(len(tag) for tag in hashtags) + len(hashtags)  # +1 space per hashtag
-        target_main_length = max_length - hashtag_length - 1  # -1 for space before hashtags
-        
-        # Adjust main text length if too long
-        if len(main_text) > target_main_length:
-            # Truncate at word boundary
-            words = main_text.split()
-            truncated = ""
-            for word in words:
-                if len(truncated + " " + word) <= target_main_length:
-                    truncated += (" " + word) if truncated else word
-                else:
-                    break
-            main_text = truncated
-        
-        # Reconstruct content
-        if hashtags:
-            adjusted_content = f"{main_text} {' '.join(hashtags)}"
-        else:
-            adjusted_content = main_text
-        
-        self.logger.info(f"Adjusted content length from {len(content)} to {len(adjusted_content)}")
-        return adjusted_content 
+        try:
+            original_length = len(content)
+            
+            # Get effective length settings
+            max_length = category.get_effective_max_length(self.config.content_max_length)
+            
+            # Extract hashtags first
+            hashtags = self._extract_hashtags(content)
+            
+            # Remove hashtags from content to work with main text
+            main_text = content
+            for hashtag in hashtags:
+                main_text = main_text.replace(hashtag, "").strip()
+            
+            # Calculate target length (total - hashtags - spaces)
+            hashtag_length = sum(len(tag) for tag in hashtags) + len(hashtags)  # +1 space per hashtag
+            target_main_length = max_length - hashtag_length - 1  # -1 for space before hashtags
+            
+            # Adjust main text length if too long
+            if len(main_text) > target_main_length:
+                # Truncate at word boundary
+                words = main_text.split()
+                truncated = ""
+                for word in words:
+                    if len(truncated + " " + word) <= target_main_length:
+                        truncated += (" " + word) if truncated else word
+                    else:
+                        break
+                main_text = truncated
+                
+                self.logger.info(
+                    "Content truncated to fit length requirements",
+                    original_main_length=len(content) - hashtag_length,
+                    target_main_length=target_main_length,
+                    truncated_main_length=len(main_text)
+                )
+            
+            # Reconstruct content
+            if hashtags:
+                adjusted_content = f"{main_text} {' '.join(hashtags)}"
+            else:
+                adjusted_content = main_text
+            
+            final_length = len(adjusted_content)
+            
+            self.logger.debug(
+                "Content length adjustment completed",
+                original_length=original_length,
+                final_length=final_length,
+                max_length=max_length,
+                hashtag_count=len(hashtags),
+                was_truncated=original_length != final_length
+            )
+            
+            return adjusted_content
+            
+        except Exception as e:
+            self.logger.error(
+                "Error adjusting content length",
+                error=e,
+                content_preview=content[:100] + "...",
+                max_length=category.get_effective_max_length(self.config.content_max_length)
+            )
+            # Return original content if adjustment fails
+            return content 
