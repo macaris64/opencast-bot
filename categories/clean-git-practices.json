@@ -4,31 +4,104 @@
   "description": "Git best practices for effective team collaboration",
   "prompt_template": "Generate a useful Git tip about {topic} for team collaboration. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
+  "created_at": "2025-01-27T00:00:00",
+  "updated_at": "2025-06-13T20:09:57.172179",
+  "topics": [
+    {
+      "topic": "Commit message conventions",
+      "entries": []
+    },
+    {
+      "topic": "Branch naming strategies",
+      "entries": []
+    },
+    {
+      "topic": "Code review workflows",
+      "entries": []
+    },
+    {
+      "topic": "Merge vs rebase strategies",
+      "entries": []
+    },
+    {
+      "topic": "Git hooks automation",
+      "entries": []
+    },
+    {
+      "topic": "Conflict resolution techniques",
+      "entries": []
+    },
+    {
+      "topic": "Repository organization",
+      "entries": [
+        {
+          "content": "Quick tip: Create separate branches for each feature or bug fix to keep your repository organized and avoid conflicts. #Git #teamcollaboration",
+          "metadata": {
+            "length": 142,
+            "source": "openai",
+            "tags": [
+              "#Git",
+              "#teamcollaboration"
+            ]
+          },
+          "created_at": "2025-06-13T20:09:57.172132"
+        }
+      ]
+    },
+    {
+      "topic": "Release management",
+      "entries": []
+    },
+    {
+      "topic": "Feature branch workflows",
+      "entries": []
+    },
+    {
+      "topic": "Git history cleanup",
+      "entries": []
+    },
+    {
+      "topic": "Semantic versioning",
+      "entries": []
+    },
+    {
+      "topic": "Hotfix procedures",
+      "entries": []
+    },
+    {
+      "topic": "Git submodules management",
+      "entries": []
+    },
+    {
+      "topic": "Large file handling",
+      "entries": []
+    },
+    {
+      "topic": "Collaborative workflows",
+      "entries": []
+    },
+    {
+      "topic": "Git security practices",
+      "entries": []
+    },
+    {
+      "topic": "Backup and recovery",
+      "entries": []
+    },
+    {
+      "topic": "Git performance optimization",
+      "entries": []
+    },
+    {
+      "topic": "Monorepo strategies",
+      "entries": []
+    },
+    {
+      "topic": "Git workflow automation",
+      "entries": []
+    }
+  ],
   "min_length": 20,
   "max_length": 220,
-  "hashtag_count": 2,
-  "created_at": "2025-01-27",
-  "updated_at": "2025-01-27",
-  "topics": [
-    {"topic": "Commit message conventions", "entries": []},
-    {"topic": "Branch naming strategies", "entries": []},
-    {"topic": "Code review workflows", "entries": []},
-    {"topic": "Merge vs rebase strategies", "entries": []},
-    {"topic": "Git hooks automation", "entries": []},
-    {"topic": "Conflict resolution techniques", "entries": []},
-    {"topic": "Repository organization", "entries": []},
-    {"topic": "Release management", "entries": []},
-    {"topic": "Feature branch workflows", "entries": []},
-    {"topic": "Git history cleanup", "entries": []},
-    {"topic": "Semantic versioning", "entries": []},
-    {"topic": "Hotfix procedures", "entries": []},
-    {"topic": "Git submodules management", "entries": []},
-    {"topic": "Large file handling", "entries": []},
-    {"topic": "Collaborative workflows", "entries": []},
-    {"topic": "Git security practices", "entries": []},
-    {"topic": "Backup and recovery", "entries": []},
-    {"topic": "Git performance optimization", "entries": []},
-    {"topic": "Monorepo strategies", "entries": []},
-    {"topic": "Git workflow automation", "entries": []}
-  ]
-} 
+  "required_hashtags": null
+}

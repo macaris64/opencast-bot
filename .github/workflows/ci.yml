@@ -69,8 +69,15 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DRY_RUN: false
-          LOG_LEVEL: INFO
+          LOG_LEVEL: DEBUG
         run: |
+          echo "🔍 Debug: Checking environment variables..."
+          echo "OPENAI_API_KEY length: ${#OPENAI_API_KEY}"
+          echo "TWITTER_API_KEY length: ${#TWITTER_API_KEY}"
+          echo "TELEGRAM_BOT_TOKEN length: ${#TELEGRAM_BOT_TOKEN}"
+          echo "🔍 Debug: Validating configuration..."
+          python -m bot.cli validate_config || echo "⚠️ Config validation failed"
+          echo "🔍 Debug: Running bot..."
           python scripts/run_bot.py
 
       - name: Auto-commit changes

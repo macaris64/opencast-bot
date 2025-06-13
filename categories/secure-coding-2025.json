@@ -4,31 +4,104 @@
   "description": "Modern security practices and secure coding techniques",
   "prompt_template": "Generate a security-focused tip about {topic} for developers in 2025. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
+  "created_at": "2025-01-27T00:00:00",
+  "updated_at": "2025-06-13T20:13:31.119533",
+  "topics": [
+    {
+      "topic": "Zero-trust security architecture",
+      "entries": []
+    },
+    {
+      "topic": "Supply chain security practices",
+      "entries": []
+    },
+    {
+      "topic": "OWASP Top 10 vulnerabilities",
+      "entries": []
+    },
+    {
+      "topic": "Secure by design principles",
+      "entries": []
+    },
+    {
+      "topic": "Dependency vulnerability scanning",
+      "entries": []
+    },
+    {
+      "topic": "Secret management best practices",
+      "entries": []
+    },
+    {
+      "topic": "Security testing automation",
+      "entries": []
+    },
+    {
+      "topic": "Threat modeling techniques",
+      "entries": []
+    },
+    {
+      "topic": "API security hardening",
+      "entries": []
+    },
+    {
+      "topic": "Container security scanning",
+      "entries": []
+    },
+    {
+      "topic": "Code injection prevention",
+      "entries": []
+    },
+    {
+      "topic": "Authentication mechanisms",
+      "entries": []
+    },
+    {
+      "topic": "Authorization patterns",
+      "entries": []
+    },
+    {
+      "topic": "Cryptographic implementations",
+      "entries": []
+    },
+    {
+      "topic": "Security headers configuration",
+      "entries": []
+    },
+    {
+      "topic": "Input validation strategies",
+      "entries": []
+    },
+    {
+      "topic": "Secure coding standards",
+      "entries": []
+    },
+    {
+      "topic": "Privacy by design",
+      "entries": []
+    },
+    {
+      "topic": "Security incident response",
+      "entries": [
+        {
+          "content": "Quick tip: Stay ahead of the game by automating your incident response process. Use AI tools to detect and mitigate threats faster. #automation #AI",
+          "metadata": {
+            "length": 147,
+            "source": "openai",
+            "tags": [
+              "#automation",
+              "#AI"
+            ]
+          },
+          "created_at": "2025-06-13T20:13:31.119497"
+        }
+      ]
+    },
+    {
+      "topic": "Penetration testing basics",
+      "entries": []
+    }
+  ],
   "min_length": 20,
   "max_length": 220,
-  "hashtag_count": 2,
-  "created_at": "2025-01-27",
-  "updated_at": "2025-01-27",
-  "topics": [
-    {"topic": "Zero-trust security architecture", "entries": []},
-    {"topic": "Supply chain security practices", "entries": []},
-    {"topic": "OWASP Top 10 vulnerabilities", "entries": []},
-    {"topic": "Secure by design principles", "entries": []},
-    {"topic": "Dependency vulnerability scanning", "entries": []},
-    {"topic": "Secret management best practices", "entries": []},
-    {"topic": "Security testing automation", "entries": []},
-    {"topic": "Threat modeling techniques", "entries": []},
-    {"topic": "API security hardening", "entries": []},
-    {"topic": "Container security scanning", "entries": []},
-    {"topic": "Code injection prevention", "entries": []},
-    {"topic": "Authentication mechanisms", "entries": []},
-    {"topic": "Authorization patterns", "entries": []},
-    {"topic": "Cryptographic implementations", "entries": []},
-    {"topic": "Security headers configuration", "entries": []},
-    {"topic": "Input validation strategies", "entries": []},
-    {"topic": "Secure coding standards", "entries": []},
-    {"topic": "Privacy by design", "entries": []},
-    {"topic": "Security incident response", "entries": []},
-    {"topic": "Penetration testing basics", "entries": []}
-  ]
-} 
+  "required_hashtags": null
+}

@@ -58,6 +58,22 @@ def main():
     """Main execution function."""
     print("🤖 Starting OpenCast Bot auto-run...")
     
+    # Check environment variables
+    print("🔍 Debug: Checking environment...")
+    openai_key = os.getenv('OPENAI_API_KEY', '')
+    twitter_key = os.getenv('TWITTER_API_KEY', '')
+    telegram_token = os.getenv('TELEGRAM_BOT_TOKEN', '')
+    
+    print(f"OPENAI_API_KEY: {'✅ Set' if openai_key else '❌ Missing'} (length: {len(openai_key)})")
+    print(f"TWITTER_API_KEY: {'✅ Set' if twitter_key else '❌ Missing'} (length: {len(twitter_key)})")
+    print(f"TELEGRAM_BOT_TOKEN: {'✅ Set' if telegram_token else '❌ Missing'} (length: {len(telegram_token)})")
+    
+    # Validate configuration first
+    print("🔍 Debug: Validating bot configuration...")
+    if not run_command(["python", "-m", "bot.cli", "validate_config"]):
+        print("❌ Configuration validation failed!")
+        sys.exit(1)
+    
     # Get available categories and topics
     categories_and_topics = get_available_categories_and_topics()
     
@@ -76,19 +92,31 @@ def main():
     
     for category in selected_categories:
         available_topics = categories_and_topics[category]
-        topic = random.choice(available_topics)
         
-        print(f"\n📝 Processing category: {category}")
-        print(f"📋 Topic: {topic}")
+        # Try up to 5 different topics to find one that works
+        max_topic_attempts = min(5, len(available_topics))
+        topic_attempts = 0
+        category_success = False
         
-        # Generate and post content using CLI (post command does both)
-        total_attempts += 1
-        if run_command(["python", "-m", "bot.cli", "post", category, topic]):
-            success_count += 1
-            successful_operations.append(f"{category}: {topic}")
-            print(f"✅ Successfully generated and posted content for {category}: {topic}")
-        else:
-            print(f"❌ Failed to generate and post content for {category}: {topic}")
+        while topic_attempts < max_topic_attempts and not category_success:
+            topic = random.choice(available_topics)
+            
+            print(f"\n📝 Processing category: {category}")
+            print(f"📋 Topic: {topic} (attempt {topic_attempts + 1}/{max_topic_attempts})")
+            
+            # Generate and post content using CLI (post command does both)
+            total_attempts += 1
+            if run_command(["python", "-m", "bot.cli", "post", category, topic]):
+                success_count += 1
+                successful_operations.append(f"{category}: {topic}")
+                print(f"✅ Successfully generated and posted content for {category}: {topic}")
+                category_success = True
+            else:
+                print(f"❌ Failed to generate and post content for {category}: {topic}")
+                topic_attempts += 1
+                
+                if topic_attempts < max_topic_attempts:
+                    print(f"🔄 Trying different topic for {category}...")
     
     print(f"\n📊 Summary: {success_count}/{total_attempts} successful operations")
     
