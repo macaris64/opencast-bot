@@ -62,11 +62,21 @@ def main():
     print("🔍 Debug: Checking environment...")
     openai_key = os.getenv('OPENAI_API_KEY', '')
     twitter_key = os.getenv('TWITTER_API_KEY', '')
+    twitter_secret = os.getenv('TWITTER_API_SECRET', '')
+    twitter_token = os.getenv('TWITTER_ACCESS_TOKEN', '')
+    twitter_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', '')
+    twitter_bearer = os.getenv('TWITTER_BEARER_TOKEN', '')
     telegram_token = os.getenv('TELEGRAM_BOT_TOKEN', '')
+    telegram_chat = os.getenv('TELEGRAM_CHAT_ID', '')
     
     print(f"OPENAI_API_KEY: {'✅ Set' if openai_key else '❌ Missing'} (length: {len(openai_key)})")
     print(f"TWITTER_API_KEY: {'✅ Set' if twitter_key else '❌ Missing'} (length: {len(twitter_key)})")
+    print(f"TWITTER_API_SECRET: {'✅ Set' if twitter_secret else '❌ Missing'} (length: {len(twitter_secret)})")
+    print(f"TWITTER_ACCESS_TOKEN: {'✅ Set' if twitter_token else '❌ Missing'} (length: {len(twitter_token)})")
+    print(f"TWITTER_ACCESS_TOKEN_SECRET: {'✅ Set' if twitter_token_secret else '❌ Missing'} (length: {len(twitter_token_secret)})")
+    print(f"TWITTER_BEARER_TOKEN: {'✅ Set' if twitter_bearer else '❌ Missing'} (length: {len(twitter_bearer)})")
     print(f"TELEGRAM_BOT_TOKEN: {'✅ Set' if telegram_token else '❌ Missing'} (length: {len(telegram_token)})")
+    print(f"TELEGRAM_CHAT_ID: {'✅ Set' if telegram_chat else '❌ Missing'} (length: {len(telegram_chat)})")
     
     # Validate configuration first
     print("🔍 Debug: Validating bot configuration...")
