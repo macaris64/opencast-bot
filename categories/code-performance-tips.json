@@ -9,5 +9,26 @@
   "hashtag_count": 2,
   "created_at": "2025-01-27",
   "updated_at": "2025-01-27",
-  "topics": []
+  "topics": [
+    {"topic": "Memory optimization techniques", "entries": []},
+    {"topic": "Database query optimization", "entries": []},
+    {"topic": "Caching strategies", "entries": []},
+    {"topic": "Bundle size reduction", "entries": []},
+    {"topic": "Runtime performance tuning", "entries": []},
+    {"topic": "Network optimization", "entries": []},
+    {"topic": "Algorithm efficiency", "entries": []},
+    {"topic": "Profiling and monitoring", "entries": []},
+    {"topic": "Lazy loading implementation", "entries": []},
+    {"topic": "Code splitting strategies", "entries": []},
+    {"topic": "Image optimization", "entries": []},
+    {"topic": "CPU usage optimization", "entries": []},
+    {"topic": "Garbage collection tuning", "entries": []},
+    {"topic": "Asynchronous processing", "entries": []},
+    {"topic": "Connection pooling", "entries": []},
+    {"topic": "Compression techniques", "entries": []},
+    {"topic": "CDN optimization", "entries": []},
+    {"topic": "Resource preloading", "entries": []},
+    {"topic": "Performance budgets", "entries": []},
+    {"topic": "Benchmarking strategies", "entries": []}
+  ]
 } 

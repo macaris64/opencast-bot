@@ -4,10 +4,104 @@
   "description": "Tips for integrating AI tools into development workflows",
   "prompt_template": "Generate a practical tip about {topic} for developers using AI tools. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
+  "created_at": "2025-01-27T00:00:00",
+  "updated_at": "2025-06-13T16:55:19.819552",
+  "topics": [
+    {
+      "topic": "GitHub Copilot best practices",
+      "entries": []
+    },
+    {
+      "topic": "AI code review automation",
+      "entries": []
+    },
+    {
+      "topic": "ChatGPT for debugging",
+      "entries": []
+    },
+    {
+      "topic": "AI-assisted test generation",
+      "entries": []
+    },
+    {
+      "topic": "Code completion optimization",
+      "entries": []
+    },
+    {
+      "topic": "AI pair programming workflows",
+      "entries": []
+    },
+    {
+      "topic": "Automated documentation with AI",
+      "entries": []
+    },
+    {
+      "topic": "AI-powered refactoring tools",
+      "entries": []
+    },
+    {
+      "topic": "Machine learning model integration",
+      "entries": []
+    },
+    {
+      "topic": "AI code quality analysis",
+      "entries": []
+    },
+    {
+      "topic": "Prompt engineering for developers",
+      "entries": [
+        {
+          "content": "Utilize pre-trained models like GPT-3 and fine-tune prompts regularly to improve AI tool performance. #PromptEngineering #AIDevelopment",
+          "metadata": {
+            "length": 135,
+            "source": "openai",
+            "tags": [
+              "#PromptEngineering",
+              "#AIDevelopment"
+            ]
+          },
+          "created_at": "2025-06-13T16:55:19.819511"
+        }
+      ]
+    },
+    {
+      "topic": "AI-driven API design",
+      "entries": []
+    },
+    {
+      "topic": "Automated bug detection",
+      "entries": []
+    },
+    {
+      "topic": "AI code optimization",
+      "entries": []
+    },
+    {
+      "topic": "Smart code suggestions",
+      "entries": []
+    },
+    {
+      "topic": "AI-assisted architecture planning",
+      "entries": []
+    },
+    {
+      "topic": "Automated code migration",
+      "entries": []
+    },
+    {
+      "topic": "AI security vulnerability scanning",
+      "entries": []
+    },
+    {
+      "topic": "Intelligent code formatting",
+      "entries": []
+    },
+    {
+      "topic": "AI-powered development metrics",
+      "entries": []
+    }
+  ],
   "min_length": 20,
   "max_length": 220,
-  "hashtag_count": 2,
-  "created_at": "2025-01-27",
-  "updated_at": "2025-01-27",
-  "topics": []
-} 
+  "required_hashtags": null
+}

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from bot.config import Config
 from bot.models.category import Category, CategoryEntry, CategoryMetadata
+from bot.models.content_seeds import get_seed_manager
 
 
 class ContentGenerationError(Exception):
@@ -63,16 +64,16 @@ class ContentGenerator:
         Returns:
             CategoryEntry if generation successful, None otherwise
         """
+        # Check if content already exists for this topic
+        if category.has_content_for_topic(topic):
+            self.logger.info(f"Content already exists for topic '{topic}' in category '{category.category_id}'")
+            return None
+        
         max_retries = self.config.max_retries
         retry_count = 0
         
         while retry_count < max_retries:
             try:
-                # Check if content already exists for this topic
-                if category.has_content_for_topic(topic):
-                    self.logger.info(f"Content already exists for topic '{topic}' in category '{category.category_id}'")
-                    return None
-                
                 # Get effective prompt template
                 prompt_template = category.get_effective_prompt_template(self.config.default_prompt_template)
                 
@@ -149,10 +150,17 @@ class ContentGenerator:
             APIError: If API call fails
         """
         try:
-            # Format prompt with topic
-            prompt = prompt_template.format(topic=topic)
+            # Get a random content seed for variety
+            seed_manager = get_seed_manager()
+            seed = seed_manager.get_random_seed()
             
-            self.logger.debug(f"Generating content with prompt: {prompt}")
+            # Apply seed to enhance the prompt
+            enhanced_prompt = seed.apply_to_prompt(prompt_template)
+            
+            # Format prompt with topic
+            prompt = enhanced_prompt.format(topic=topic)
+            
+            self.logger.debug(f"Generating content with enhanced prompt (tone: {seed.tone.value}, style: {seed.style.value}): {prompt[:100]}...")
             
             # Check if using placeholder API key
             if self.config.openai_api_key == "sk-placeholder-for-development":

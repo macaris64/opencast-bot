@@ -30,8 +30,18 @@ def generate(
     category_id: str = typer.Argument(..., help="Category identifier"),
     topic: str = typer.Argument(..., help="Topic to generate content for")
 ) -> None:
-    """Generate content for a category and topic."""
+    """Generate content for a category and topic (without posting)."""
     import asyncio
+    
+    # Show warning and ask for confirmation
+    typer.echo("⚠️  WARNING: This command will only GENERATE content.")
+    typer.echo("📝 Content will be saved to JSON but NOT posted to any platform.")
+    typer.echo("🚀 Use 'post' command to both generate AND post content.")
+    typer.echo()
+    
+    if not typer.confirm("Do you want to continue with content generation only?"):
+        typer.echo("❌ Operation cancelled")
+        raise typer.Exit(0)
     
     async def _generate():
         try:
@@ -164,94 +174,96 @@ def validate_config() -> None:
 @app.command()
 def post(
     category_id: str = typer.Argument(..., help="Category identifier"),
-    topic: str = typer.Argument(..., help="Topic to post content for")
+    topic: str = typer.Argument(..., help="Topic to generate and post content for")
 ) -> None:
-    """Post existing content for a category and topic."""
+    """Generate new content and post it to social media platforms."""
     
     async def _post():
         try:
             config = Config()
             manager = JSONCategoryManager(config.data_directory)
+            generator = ContentGenerator(config)
             
             # Load category
             category = manager.load_category(category_id)
             
-            # Find content for topic
-            content_found = False
-            for topic_data in category.topics:
-                if topic_data.topic == topic and topic_data.entries:
-                    content_found = True
-                    entry = topic_data.entries[-1]  # Get latest entry
-                    
-                    if config.dry_run:
-                        typer.echo(f"🔍 DRY RUN - Would post: {entry.content}")
-                        return
-                    
-                    # Post to enabled platforms
-                    platforms = config.get_enabled_platforms()
-                    success_count = 0
-                    
-                    if "twitter" in platforms:
-                        from bot.publisher.twitter import TwitterPublisher, TwitterConfig
-                        twitter_config = TwitterConfig(
-                            api_key=config.twitter_api_key,
-                            api_secret=config.twitter_api_secret,
-                            access_token=config.twitter_access_token,
-                            access_token_secret=config.twitter_access_token_secret,
-                            bearer_token=config.twitter_bearer_token
-                        )
-                        
-                        # Create Twitter-specific PostContent
-                        twitter_post_content = PostContent(
-                            content=entry.content,
-                            platform="x",
-                            category_id=category_id,
-                            topic=topic,
-                            hashtags=entry.metadata.tags,
-                            status=PostStatus.PENDING
-                        )
-                        
-                        async with TwitterPublisher(twitter_config) as twitter:
-                            if await twitter.post_content(twitter_post_content):
-                                success_count += 1
-                                typer.echo("✅ Posted to Twitter")
-                            else:
-                                typer.echo("❌ Failed to post to Twitter")
-                    
-                    if "telegram" in platforms:
-                        from bot.publisher.telegram import TelegramPublisher, TelegramConfig
-                        telegram_config = TelegramConfig(
-                            bot_token=config.telegram_bot_token,
-                            chat_id=config.telegram_chat_id,
-                            parse_mode=config.telegram_parse_mode
-                        )
-                        
-                        # Create Telegram-specific PostContent
-                        telegram_post_content = PostContent(
-                            content=entry.content,
-                            platform="telegram",
-                            category_id=category_id,
-                            topic=topic,
-                            hashtags=entry.metadata.tags,
-                            status=PostStatus.PENDING
-                        )
-                        
-                        async with TelegramPublisher(telegram_config) as telegram:
-                            if await telegram.post_content(telegram_post_content):
-                                success_count += 1
-                                typer.echo("✅ Posted to Telegram")
-                            else:
-                                typer.echo("❌ Failed to post to Telegram")
-                    
-                    if success_count > 0:
-                        typer.echo("✅ Posted successfully to at least one platform")
-                    else:
-                        typer.echo("❌ Failed to post to any platform")
-                        raise typer.Exit(1)
-                    break
+            # Generate new content
+            typer.echo(f"🔄 Generating content for '{topic}'...")
+            entry = await generator.generate_content(category, topic)
             
-            if not content_found:
-                typer.echo(f"❌ No content found for topic '{topic}' in category '{category_id}'")
+            if not entry:
+                typer.echo(f"❌ Failed to generate content for topic '{topic}'")
+                raise typer.Exit(1)
+            
+            # Add entry to category and save
+            category.add_entry(topic, entry)
+            manager.save_category(category)
+            typer.echo(f"📝 Generated: {entry.content}")
+            
+            if config.dry_run:
+                typer.echo(f"🔍 DRY RUN - Would post: {entry.content}")
+                return
+            
+            # Post to enabled platforms
+            platforms = config.get_enabled_platforms()
+            success_count = 0
+            
+            if "twitter" in platforms:
+                from bot.publisher.twitter import TwitterPublisher, TwitterConfig
+                twitter_config = TwitterConfig(
+                    api_key=config.twitter_api_key,
+                    api_secret=config.twitter_api_secret,
+                    access_token=config.twitter_access_token,
+                    access_token_secret=config.twitter_access_token_secret,
+                    bearer_token=config.twitter_bearer_token
+                )
+                
+                # Create Twitter-specific PostContent
+                twitter_post_content = PostContent(
+                    content=entry.content,
+                    platform="x",
+                    category_id=category_id,
+                    topic=topic,
+                    hashtags=entry.metadata.tags,
+                    status=PostStatus.PENDING
+                )
+                
+                async with TwitterPublisher(twitter_config) as twitter:
+                    if await twitter.post_content(twitter_post_content):
+                        success_count += 1
+                        typer.echo("✅ Posted to Twitter")
+                    else:
+                        typer.echo("❌ Failed to post to Twitter")
+            
+            if "telegram" in platforms:
+                from bot.publisher.telegram import TelegramPublisher, TelegramConfig
+                telegram_config = TelegramConfig(
+                    bot_token=config.telegram_bot_token,
+                    chat_id=config.telegram_chat_id,
+                    parse_mode=config.telegram_parse_mode
+                )
+                
+                # Create Telegram-specific PostContent
+                telegram_post_content = PostContent(
+                    content=entry.content,
+                    platform="telegram",
+                    category_id=category_id,
+                    topic=topic,
+                    hashtags=entry.metadata.tags,
+                    status=PostStatus.PENDING
+                )
+                
+                async with TelegramPublisher(telegram_config) as telegram:
+                    if await telegram.post_content(telegram_post_content):
+                        success_count += 1
+                        typer.echo("✅ Posted to Telegram")
+                    else:
+                        typer.echo("❌ Failed to post to Telegram")
+            
+            if success_count > 0:
+                typer.echo("✅ Posted successfully to at least one platform")
+            else:
+                typer.echo("❌ Failed to post to any platform")
                 raise typer.Exit(1)
                 
         except Exception as e:

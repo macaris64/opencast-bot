@@ -4,10 +4,153 @@
   "description": "Best practices for cloud-native application design",
   "prompt_template": "Generate an insightful tip about {topic} for cloud-native development. Content should be 20-220 characters including exactly 2 hashtags in English.",
   "language": "en",
+  "created_at": "2025-01-27T00:00:00",
+  "updated_at": "2025-06-13T17:11:50.004124",
+  "topics": [
+    {
+      "topic": "Microservices architecture patterns",
+      "entries": []
+    },
+    {
+      "topic": "Container orchestration strategies",
+      "entries": []
+    },
+    {
+      "topic": "Kubernetes deployment best practices",
+      "entries": [
+        {
+          "content": "New to this? Remember to define resource requests and limits for better pod performance and resource allocation. #Kubernetes #CloudNative",
+          "metadata": {
+            "length": 137,
+            "source": "openai",
+            "tags": [
+              "#Kubernetes",
+              "#CloudNative"
+            ]
+          },
+          "created_at": "2025-06-13T17:11:50.004099"
+        }
+      ]
+    },
+    {
+      "topic": "Serverless function optimization",
+      "entries": []
+    },
+    {
+      "topic": "Event-driven architecture design",
+      "entries": []
+    },
+    {
+      "topic": "API gateway configuration",
+      "entries": []
+    },
+    {
+      "topic": "Service mesh implementation",
+      "entries": []
+    },
+    {
+      "topic": "Cloud security patterns",
+      "entries": []
+    },
+    {
+      "topic": "Distributed system monitoring",
+      "entries": []
+    },
+    {
+      "topic": "Auto-scaling strategies",
+      "entries": []
+    },
+    {
+      "topic": "Cloud-native database design",
+      "entries": []
+    },
+    {
+      "topic": "Container image optimization",
+      "entries": []
+    },
+    {
+      "topic": "Multi-cloud deployment",
+      "entries": []
+    },
+    {
+      "topic": "Cloud cost optimization",
+      "entries": [
+        {
+          "content": "Regularly monitor and adjust resource allocation to minimize costs and maximize efficiency. #CloudCostOptimization #CloudNativeDevelopment",
+          "metadata": {
+            "length": 138,
+            "source": "openai",
+            "tags": [
+              "#CloudCostOptimization",
+              "#CloudNativeDevelopment"
+            ]
+          },
+          "created_at": "2025-06-13T16:57:57.674387"
+        },
+        {
+          "content": "Regularly monitor and adjust resources to match actual usage for optimal cost savings. #CloudCost #Optimization",
+          "metadata": {
+            "length": 111,
+            "source": "openai",
+            "tags": [
+              "#CloudCost",
+              "#Optimization"
+            ]
+          },
+          "created_at": "2025-06-13T16:58:11.375419"
+        },
+        {
+          "content": "Optimize your cloud costs by leveraging auto-scaling features and monitoring resources closely. #CloudOptimization #CostSavings",
+          "metadata": {
+            "length": 127,
+            "source": "openai",
+            "tags": [
+              "#CloudOptimization",
+              "#CostSavings"
+            ]
+          },
+          "created_at": "2025-06-13T17:05:34.679511"
+        },
+        {
+          "content": "Remember: Monitor resource usage regularly to identify inefficiencies and adjust accordingly. #CloudCostOptimization #CloudNativeDevelopment",
+          "metadata": {
+            "length": 140,
+            "source": "openai",
+            "tags": [
+              "#CloudCostOptimization",
+              "#CloudNativeDevelopment"
+            ]
+          },
+          "created_at": "2025-06-13T17:06:44.814715"
+        }
+      ]
+    },
+    {
+      "topic": "Disaster recovery planning",
+      "entries": []
+    },
+    {
+      "topic": "Cloud migration strategies",
+      "entries": []
+    },
+    {
+      "topic": "Infrastructure as Code",
+      "entries": []
+    },
+    {
+      "topic": "Cloud observability tools",
+      "entries": []
+    },
+    {
+      "topic": "Edge computing integration",
+      "entries": []
+    },
+    {
+      "topic": "Cloud-native CI/CD pipelines",
+      "entries": []
+    }
+  ],
   "min_length": 20,
   "max_length": 220,
-  "hashtag_count": 2,
-  "created_at": "2025-01-27",
-  "updated_at": "2025-01-27",
-  "topics": []
-} 
+  "required_hashtags": null
+}

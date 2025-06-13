@@ -9,5 +9,26 @@
   "hashtag_count": 2,
   "created_at": "2025-01-27",
   "updated_at": "2025-01-27",
-  "topics": []
+  "topics": [
+    {"topic": "Micro-frontend patterns", "entries": []},
+    {"topic": "State management strategies", "entries": []},
+    {"topic": "Component design systems", "entries": []},
+    {"topic": "Module federation", "entries": []},
+    {"topic": "Build optimization", "entries": []},
+    {"topic": "Runtime architecture", "entries": []},
+    {"topic": "Performance budgets", "entries": []},
+    {"topic": "Scalability patterns", "entries": []},
+    {"topic": "Progressive web apps", "entries": []},
+    {"topic": "Server-side rendering", "entries": []},
+    {"topic": "Static site generation", "entries": []},
+    {"topic": "Component composition", "entries": []},
+    {"topic": "CSS architecture", "entries": []},
+    {"topic": "Asset optimization", "entries": []},
+    {"topic": "Browser compatibility", "entries": []},
+    {"topic": "Accessibility patterns", "entries": []},
+    {"topic": "Responsive design strategies", "entries": []},
+    {"topic": "Frontend monitoring", "entries": []},
+    {"topic": "Error boundary implementation", "entries": []},
+    {"topic": "Code organization patterns", "entries": []}
+  ]
 } 

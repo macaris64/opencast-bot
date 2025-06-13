@@ -9,5 +9,26 @@
   "hashtag_count": 2,
   "created_at": "2025-01-27",
   "updated_at": "2025-01-27",
-  "topics": []
+  "topics": [
+    {"topic": "Commit message conventions", "entries": []},
+    {"topic": "Branch naming strategies", "entries": []},
+    {"topic": "Code review workflows", "entries": []},
+    {"topic": "Merge vs rebase strategies", "entries": []},
+    {"topic": "Git hooks automation", "entries": []},
+    {"topic": "Conflict resolution techniques", "entries": []},
+    {"topic": "Repository organization", "entries": []},
+    {"topic": "Release management", "entries": []},
+    {"topic": "Feature branch workflows", "entries": []},
+    {"topic": "Git history cleanup", "entries": []},
+    {"topic": "Semantic versioning", "entries": []},
+    {"topic": "Hotfix procedures", "entries": []},
+    {"topic": "Git submodules management", "entries": []},
+    {"topic": "Large file handling", "entries": []},
+    {"topic": "Collaborative workflows", "entries": []},
+    {"topic": "Git security practices", "entries": []},
+    {"topic": "Backup and recovery", "entries": []},
+    {"topic": "Git performance optimization", "entries": []},
+    {"topic": "Monorepo strategies", "entries": []},
+    {"topic": "Git workflow automation", "entries": []}
+  ]
 } 

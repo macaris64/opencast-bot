@@ -161,7 +161,8 @@ class TestCLI:
         mock_generator_instance.generate_content = mock_generate_content
         mock_generator.return_value = mock_generator_instance
 
-        result = runner.invoke(app, ["generate", "test-category", "New Topic"])
+        # Provide 'y' input for confirmation prompt
+        result = runner.invoke(app, ["generate", "test-category", "New Topic"], input="y\n")
 
         assert result.exit_code == 0
         assert "Content generated successfully" in result.stdout
@@ -183,7 +184,8 @@ class TestCLI:
         mock_generator_instance.generate_content = mock_generate_content
         mock_generator.return_value = mock_generator_instance
 
-        result = runner.invoke(app, ["generate", "test-category", "Test Topic"])
+        # Provide 'y' input for confirmation prompt
+        result = runner.invoke(app, ["generate", "test-category", "Test Topic"], input="y\n")
 
         assert result.exit_code == 0
         assert "Content already exists for this topic" in result.stdout
@@ -197,7 +199,8 @@ class TestCLI:
         mock_manager_instance.load_category.side_effect = FileNotFoundError()
         mock_manager.return_value = mock_manager_instance
         
-        result = runner.invoke(app, ["generate", "nonexistent", "Topic"])
+        # Provide 'y' input for confirmation prompt
+        result = runner.invoke(app, ["generate", "nonexistent", "Topic"], input="y\n")
         
         assert result.exit_code == 1
         assert "Category 'nonexistent' not found" in result.stdout
@@ -205,8 +208,9 @@ class TestCLI:
     @patch('bot.cli.Config')
     @patch('bot.publisher.twitter.TwitterPublisher')
     @patch('bot.publisher.telegram.TelegramPublisher')
+    @patch('bot.cli.ContentGenerator')
     @patch('bot.cli.JSONCategoryManager')
-    def test_post_command_success(self, mock_manager, mock_telegram, mock_twitter, mock_config, runner, sample_category_data):
+    def test_post_command_success(self, mock_manager, mock_generator, mock_telegram, mock_twitter, mock_config, runner, sample_category_data):
         """Test post command with successful posting."""
         # Setup config mock
         mock_config_instance = Mock()
@@ -227,11 +231,23 @@ class TestCLI:
         
         mock_config.return_value = mock_config_instance
         
-        # Setup mocks
+        # Setup category manager mocks
         mock_category = Category(**sample_category_data)
         mock_manager_instance = Mock()
         mock_manager_instance.load_category.return_value = mock_category
+        mock_manager_instance.save_category.return_value = None
         mock_manager.return_value = mock_manager_instance
+        
+        # Setup content generator mocks
+        mock_entry = CategoryEntry(
+            content="This is a test content with proper length and formatting! #test #new",
+            metadata=CategoryMetadata(length=70, source="openai", tags=["#test", "#new"])
+        )
+        mock_generator_instance = Mock()
+        async def mock_generate_content(*args, **kwargs):
+            return mock_entry
+        mock_generator_instance.generate_content = mock_generate_content
+        mock_generator.return_value = mock_generator_instance
         
         # Mock publisher instances with async context manager support
         mock_twitter_instance = Mock()
@@ -251,8 +267,9 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Posted successfully" in result.stdout
     
+    @patch('bot.cli.ContentGenerator')
     @patch('bot.cli.JSONCategoryManager')
-    def test_post_command_no_content(self, mock_manager, runner):
+    def test_post_command_no_content(self, mock_manager, mock_generator, runner):
         """Test post command when no content exists for topic."""
         # Setup mocks
         empty_category_data = {
@@ -268,18 +285,37 @@ class TestCLI:
         mock_manager_instance.load_category.return_value = mock_category
         mock_manager.return_value = mock_manager_instance
         
+        # Setup content generator to return None (no content generated)
+        mock_generator_instance = Mock()
+        async def mock_generate_content(*args, **kwargs):
+            return None
+        mock_generator_instance.generate_content = mock_generate_content
+        mock_generator.return_value = mock_generator_instance
+        
         result = runner.invoke(app, ["post", "test-category", "Nonexistent Topic"])
         
         assert result.exit_code == 1
-        assert "No content found" in result.stdout
+        assert "Failed to generate content" in result.stdout
     
-    def test_post_command_dry_run(self, runner, sample_category_data):
+    @patch('bot.cli.ContentGenerator')
+    def test_post_command_dry_run(self, mock_generator, runner, sample_category_data):
         """Test post command in dry-run mode."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a sample category file
             category_file = Path(temp_dir) / "test-category.json"
             with open(category_file, 'w') as f:
                 json.dump(sample_category_data, f)
+            
+            # Setup content generator mocks
+            mock_entry = CategoryEntry(
+                content="This is a test content with proper length and formatting! #test #new",
+                metadata=CategoryMetadata(length=70, source="openai", tags=["#test", "#new"])
+            )
+            mock_generator_instance = Mock()
+            async def mock_generate_content(*args, **kwargs):
+                return mock_entry
+            mock_generator_instance.generate_content = mock_generate_content
+            mock_generator.return_value = mock_generator_instance
             
             with patch.dict('os.environ', {
                 'DATA_DIRECTORY': temp_dir,
@@ -289,7 +325,7 @@ class TestCLI:
                 
                 assert result.exit_code == 0
                 assert "DRY RUN" in result.stdout
-    
+
     def test_list_topics_command(self, runner, sample_category_data):
         """Test list-topics command."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -397,13 +433,13 @@ class TestCLI:
         # Setup config mock
         mock_config_instance = Mock()
         mock_config.return_value = mock_config_instance
-        
+
         # Setup mocks
         mock_category = Category(**sample_category_data)
         mock_manager_instance = Mock()
         mock_manager_instance.load_category.return_value = mock_category
         mock_manager.return_value = mock_manager_instance
-        
+
         with patch('bot.cli.ContentGenerator') as mock_generator:
             mock_generator_instance = Mock()
             # Make generate_content raise an exception
@@ -411,57 +447,70 @@ class TestCLI:
                 raise Exception("Generation failed")
             mock_generator_instance.generate_content = mock_generate_content
             mock_generator.return_value = mock_generator_instance
-            
-            result = runner.invoke(app, ["generate", "test-category", "New Topic"])
-            
+
+            # Provide 'y' input for confirmation prompt
+            result = runner.invoke(app, ["generate", "test-category", "New Topic"], input="y\n")
+
             assert result.exit_code == 1
             assert "Error:" in result.stdout
-    
+
     @patch('bot.cli.Config')
     @patch('bot.publisher.twitter.TwitterPublisher')
     @patch('bot.publisher.telegram.TelegramPublisher')
+    @patch('bot.cli.ContentGenerator')
     @patch('bot.cli.JSONCategoryManager')
-    def test_post_command_partial_success(self, mock_manager, mock_telegram, mock_twitter, mock_config, runner, sample_category_data):
+    def test_post_command_partial_success(self, mock_manager, mock_generator, mock_telegram, mock_twitter, mock_config, runner, sample_category_data):
         """Test post command with partial success (one platform fails)."""
         # Setup config mock
         mock_config_instance = Mock()
         mock_config_instance.dry_run = False
         mock_config_instance.get_enabled_platforms.return_value = ["twitter", "telegram"]
-        
+
         # Mock Twitter config properties
         mock_config_instance.twitter_api_key = "test_key"
         mock_config_instance.twitter_api_secret = "test_secret"
         mock_config_instance.twitter_access_token = "test_token"
         mock_config_instance.twitter_access_token_secret = "test_token_secret"
         mock_config_instance.twitter_bearer_token = "test_bearer"
-        
+
         # Mock Telegram config properties
         mock_config_instance.telegram_bot_token = "test_bot_token"
         mock_config_instance.telegram_chat_id = "test_chat_id"
         mock_config_instance.telegram_parse_mode = "HTML"
-        
+
         mock_config.return_value = mock_config_instance
-        
-        # Setup mocks
+
+        # Setup category manager mocks
         mock_category = Category(**sample_category_data)
         mock_manager_instance = Mock()
         mock_manager_instance.load_category.return_value = mock_category
         mock_manager.return_value = mock_manager_instance
         
+        # Setup content generator mocks
+        mock_entry = CategoryEntry(
+            content="This is a test content with proper length and formatting! #test #new",
+            metadata=CategoryMetadata(length=70, source="openai", tags=["#test", "#new"])
+        )
+        mock_generator_instance = Mock()
+        async def mock_generate_content(*args, **kwargs):
+            return mock_entry
+        mock_generator_instance.generate_content = mock_generate_content
+        mock_generator.return_value = mock_generator_instance
+
         # Mock publisher instances - Twitter succeeds, Telegram fails
         mock_twitter_instance = Mock()
         mock_twitter_instance.post_content = AsyncMock(return_value=True)
         mock_twitter_instance.__aenter__ = AsyncMock(return_value=mock_twitter_instance)
         mock_twitter_instance.__aexit__ = AsyncMock(return_value=None)
         mock_twitter.return_value = mock_twitter_instance
-        
+
         mock_telegram_instance = Mock()
         mock_telegram_instance.post_content = AsyncMock(return_value=False)  # Fails
         mock_telegram_instance.__aenter__ = AsyncMock(return_value=mock_telegram_instance)
         mock_telegram_instance.__aexit__ = AsyncMock(return_value=None)
         mock_telegram.return_value = mock_telegram_instance
-        
+
         result = runner.invoke(app, ["post", "test-category", "Test Topic"])
-        
+
         assert result.exit_code == 0  # Should succeed if at least one platform works
         assert "Posted successfully to at least one platform" in result.stdout 
