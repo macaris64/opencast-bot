@@ -40,6 +40,7 @@ class Config(BaseSettings):
     # Telegram Configuration
     telegram_bot_token: str = Field(default="", env="TELEGRAM_BOT_TOKEN", description="Telegram bot token")
     telegram_chat_id: str = Field(default="", env="TELEGRAM_CHAT_ID", description="Telegram chat ID")
+    telegram_parse_mode: str = Field(default="HTML", env="TELEGRAM_PARSE_MODE", description="Telegram message parse mode")
     telegram_enabled: bool = Field(default=False, env="TELEGRAM_ENABLED", description="Enable Telegram posting")
     
     # Content Configuration
